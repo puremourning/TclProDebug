@@ -200,6 +200,7 @@ proc dbg::start {application startDir script argList clientData} {
         lappend _input variable argc $_argc argv $_argv
         set f [open [file join $libDir appLaunch.tcl]]
         exec $application <<$_input\n[read $f] &
+        puts stderr "Launched $application with $_input" 
         close $f
 	}
     } msg]} {
@@ -437,6 +438,8 @@ proc dbg::DeliverEvent {event args} {
 
     # Break up args and reform it as a valid list so we can safely pass it
     # through uplevel.
+
+    puts stderr "Fire! $event"
 
     set newList {}
     foreach arg $args {
@@ -1326,6 +1329,7 @@ proc dbg::HandleClientExit {} {
 #	None.
 
 proc dbg::HandleConnect {sock host port} {
+    puts stderr "HandleConnect"
     variable nubSocket
     variable appState
 
@@ -1355,6 +1359,8 @@ proc dbg::HandleConnect {sock host port} {
 
 proc dbg::SendMessage {args} {
     variable nubSocket
+
+    puts stderr "NUB TX: $args"
 
     puts $nubSocket [string length $args]
     puts -nonewline $nubSocket $args
@@ -1399,6 +1405,7 @@ proc dbg::GetMessage {} {
 #	None.
 
 proc dbg::SendAsync {args} {
+    puts stderr "SendAsync $args"
     SendMessage "SEND" 0 $args
     return
 }
@@ -1466,6 +1473,8 @@ proc dbg::HandleNubEvent {} {
 	# Get the next message from the nub
 
 	set msg [GetMessage]
+
+        puts stderr "NUB RX: $msg"
 
 	# If the nub closed the connection, generate an "exit" event.
 
@@ -1539,6 +1548,7 @@ proc dbg::HandleNubEvent {} {
     } msg]
     if {$result == 1} {
 	Log error {Caught error in dbg::HandleNubEvent: $msg at \n$::errorInfo}
+        puts stderr "Error in HandleNubEvent: $msg $::errorInfo"
     }
     return
 }
@@ -1725,13 +1735,18 @@ proc dbg::InitializeNub {nubVersion tclVersion clientData} {
 #	None.
 
 proc dbg::initInstrument {} {
+    puts stderr "initInstrument"
     if {$dbg::appState != "dead"} {
+        puts stderr "app is alive"
 	SendAsync set DbgNub(dynProc)      [pref::prefGet instrumentDynamic]
 	SendAsync set DbgNub(includeFiles) [pref::prefGet doInstrument]
 	SendAsync set DbgNub(excludeFiles) [pref::prefGet dontInstrument]
 	SendAsync set DbgNub(autoLoad)   [pref::prefGet autoLoad]
 	SendAsync set DbgNub(errorAction)  [pref::prefGet errorAction]
+    } else {
+        puts stderr "app is dead"
     }
+    puts stderr "initInstrument done"
     return
 }
 
