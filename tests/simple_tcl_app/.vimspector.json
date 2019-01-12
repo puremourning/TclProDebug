@@ -1,0 +1,22 @@
+{
+    "adapters": {
+        "tclpro": {
+            "name": "tclpro",
+            "command": [
+                "$HOME/proj/tcl-debug/TclProDebug/bin/debugadapter"
+            ]
+        }
+    },
+    "configurations": {
+        "launch": {
+            "adapter": "tclpro",
+            "configuration": {
+                "request": "launch",
+                "tclsh": "/inf10xl_user1/infrastructure_release/vdev_build/core/third-party_LINUX_X86/tcl-8.5.16/64/bin/tclsh8.5",
+                "cwd": "${workspaceRoot}",
+                "target": "${workspaceRoot}/main.tcl",
+                "args": [ "this", "is", "a", "test" ]
+            }
+        }
+    }
+}

@@ -1,0 +1,7 @@
+#!/inf10xl_user1/infrastructure_release/vdev_build/core/third-party_LINUX_X86/tcl-8.5.16/64/bin/tclsh8.5
+
+lappend auto_path /usr/local/fidessa/lib/tcl/tcllib
+
+source [file join [file dirname [info script]] ../debug_server_main.tcl]
+
+# vim: ft=tcl

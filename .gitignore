@@ -1,0 +1,6 @@
+lib/tclparser/config.status
+lib/tclparser/config.log
+lib/tclparser/Makefile
+lib/tclparser/libtclparser*.so
+lib/tclparser/pkgIndex.tcl
+lib/tclparser/*.o

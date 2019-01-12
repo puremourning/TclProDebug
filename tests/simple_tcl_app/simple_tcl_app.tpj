@@ -1,0 +1,22 @@
+instrumentIncrTcl 1
+appDir /mma/users/benj/proj/tcl-debug/TclProDebug/tests/simple_tcl_app
+errorAction 1
+breakList {}
+appScriptList /mma/users/benj/proj/tcl-debug/TclProDebug/tests/simple_tcl_app/main.tcl
+appArg {this is a test}
+appType local
+doInstrument *
+appDirList /mma/users/benj/proj/tcl-debug/TclProDebug/tests/simple_tcl_app
+instrumentDynamic 1
+dontInstrument {}
+appArgList {{this is a test}}
+prevViewFile /mma/users/benj/proj/tcl-debug/TclProDebug/tests/simple_tcl_app/main.tcl
+projVersion 1.0
+portRemote 2576
+autoLoad 0
+instrumentExpect 1
+watchList {}
+appInterp /inf10xl_user1/infrastructure_release/vdev_build/core/third-party_LINUX_X86/tcl-8.5.16/64/bin/tclsh8.5
+instrumentTclx 1
+appScript /mma/users/benj/proj/tcl-debug/TclProDebug/tests/simple_tcl_app/main.tcl
+appInterpList {/inf10xl_user1/infrastructure_release/vdev_build/core/third-party_LINUX_X86/tcl-8.5.16/64/bin/tclsh8.5 /usr/bin/tclsh /usr/bin/tclsh8.5 /usr/bin/wish /usr/bin/wish8.5}

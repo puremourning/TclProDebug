@@ -1,0 +1,6 @@
+Content-Length: 49
+
+{"command":"initialize","type":"request","seq":1}
+Content-Length: 47
+
+{"event":"Hello again, ","type":"cruel world!"}
