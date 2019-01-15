@@ -3,7 +3,8 @@
         "tclpro": {
             "name": "tclpro",
             "command": [
-                "$HOME/proj/tcl-debug/TclProDebug/bin/debugadapter"
+                "$HOME/proj/tcl-debug/TclProDebug/bin/debugadapter",
+                "-debug"
             ]
         }
     },

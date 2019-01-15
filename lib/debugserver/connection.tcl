@@ -33,8 +33,9 @@ proc ::connection::connect { handler } {
     set readState_ READ_HEADER
 
     # TODO: perhaps we should actually use -translation crlf?
-    fconfigure stdin -blocking no -translation binary
-    fconfigure stdout -blocking no -translation binary
+    fconfigure stdin -blocking 0 -translation binary -buffering none
+    fconfigure stdout -blocking 0 -translation binary -buffering none
+    fconfigure stderr -blocking 1 -translation auto -buffering none
 
     fileevent stdin readable ::connection::_read
 
@@ -126,9 +127,6 @@ proc ::connection::_read { } {
 
     append input_ $data
 
-    puts stderr "RX: $data"
-    puts stderr "BUFFER: $input_"
-
     while { 1 } {
         if { $readState_ eq "READ_HEADER" } {
             _read_headers
@@ -199,18 +197,22 @@ proc ::connection::_read_body { } {
 
     puts stderr "RX MSG: $msg"
 
-    if { [dict get $msg type] == "response" } {
-        set seqNo [dict get $msg request_seq]
-        $pendingRequests_($seqNo) $msg
-    } else {
-        $handler_ $msg
+    if { [catch {
+        if { [dict get $msg type] == "response" } {
+            set seqNo [dict get $msg request_seq]
+            $pendingRequests_($seqNo) $msg
+        } else {
+            $handler_ $msg
+        }
+    } err] } {
+        puts stderr "Exception handling message: $::errorInfo"
     }
 
     set readState_ "READ_HEADER"
 }
 
 proc ::connection::_write { msg } {
-    puts stderr "TX: $msg"
+    puts stderr "TX MSG: $msg"
     puts -nonewline stdout "Content-Length: [string length $msg]\r\n"
     puts -nonewline stdout "\r\n"
     puts -nonewline stdout "$msg\r\n"

@@ -16,13 +16,12 @@ namespace eval dbg {
     # Fields:
     #   debug		Set to 1 to enable debugging output.
     #	logFile		File handle where logging messages should be written.
-    #	logFilter	If non-null, contains a regular expression that will
-    #			be compared with the message type.  If the message
-    #			type does not match, it is not logged.
+    #	logFilter	List of message types to include in debugging, or empty
+    #	                list for all.
 
-    variable debug 0
+    variable debug 1
     variable logFile stderr
-    variable logFilter {}
+    variable logFilter [list]
 
     # startup options --
     #
@@ -435,6 +434,8 @@ proc dbg::unregister {event script} {
 
 proc dbg::DeliverEvent {event args} {
     variable registeredEvent
+
+    puts stderr "DeliverEvent $event '$args'"
 
     # Break up args and reform it as a valid list so we can safely pass it
     # through uplevel.
@@ -1643,7 +1644,8 @@ proc dbg::Log {type message} {
     variable logFilter
     variable debug
 
-    if {!$debug || [lsearch -exact $logFilter $type] == -1} {
+    if {!$debug || ( [llength $logFilter] > 0 && 
+                     [lsearch -exact $logFilter $type] == -1 ) } {
 	return
     }
     puts $::dbg::logFile "LOG($type,[clock clicks]): [uplevel 1 [list subst $message]]"

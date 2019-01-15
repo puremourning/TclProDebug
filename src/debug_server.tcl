@@ -105,4 +105,4 @@ while { $APP_STATE eq "running" } {
     vwait APP_STATE
 }
 
-puts "Phew! That was a lot of work!"
+puts "Quiting debug adapter due to state: $APP_STATE"
