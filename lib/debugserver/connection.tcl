@@ -108,7 +108,11 @@ proc ::connection::reject { request reason } {
     _respond $request $reason
 }
 
-proc ::connection::accept { request { body "" } } {
+proc ::connection::accept { request } {
+    _respond $request ""
+}
+
+proc ::connection::respond { request body } {
     _respond $request "" $body
 }
 
