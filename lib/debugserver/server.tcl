@@ -24,7 +24,11 @@ proc ::server::handle { msg } {
                     $msg \
                     "Unrecognised request: [dict get $msg command]"
             } else {
-                $p $msg
+                if { [catch {$p $msg} err] } {
+                    ::dbg::Log error {Exception handling request $msg:\
+                        $::errorInfo}
+                    ::connection::reject $msg $err
+                }
             }
         }
 
