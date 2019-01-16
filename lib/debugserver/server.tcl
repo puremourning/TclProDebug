@@ -270,7 +270,9 @@ proc ::server::OnRequest_stackTrace { msg } {
 
     set frames [list]
 
-    foreach tcl_frame $stack {
+
+    for { set index 0 } { $index < [llength $stack] } { incr index } {
+        set tcl_frame [lindex $stack $index]
         lassign [lrange $tcl_frame 0 2] level loc type
         set args [lrange $tcl_frame 3 end]
 
@@ -285,7 +287,7 @@ proc ::server::OnRequest_stackTrace { msg } {
                 set name "proc [lindex $args 0]"
             }
             "source" {
-                set name "source script"
+                set name "source"
             }
         }
 
@@ -324,7 +326,7 @@ proc ::server::OnRequest_stackTrace { msg } {
             }
 
             lappend frames [json::write object                  \
-                id     $level                                   \
+                id     $index                                   \
                 name   [json::write string $name]               \
                 source [json::write object                      \
                     name [json::write string [file tail $file]] \
@@ -341,11 +343,131 @@ proc ::server::OnRequest_stackTrace { msg } {
     ]
 }
 
-proc ::server::OnRequest_disconnect { msg } {
+proc ::server::OnRequest_scopes { msg } {
     variable state
-    if { $state eq "DEBUGGING" } {
-        catch { dbg::quit }
+    if { $state ne "DEBUGGING" } {
+        ::connection::reject $msg \
+                             "Invalid event 'scopes' in state $state"
+        return
     }
+
+    set index [dict get $msg arguments frameId]
+
+    set scopes [list]
+    catch { set stack [dbg::getStack] } 
+
+    set max_level -1
+    set tcl_frame [lindex $stack $index]
+    if { $tcl_frame != {} } {
+        # level loc type args...
+        set max_level [lindex $tcl_frame 0]
+    }
+
+    array set seen_levels [list]
+    for { set index 0 } { $index < [llength $stack] } { incr index } {
+        set tcl_frame [lindex $stack $index]
+        lassign [lrange $tcl_frame 0 2] level loc type
+        set args [lrange $tcl_frame 3 end]
+
+        switch -exact -- $type {
+            "global" {
+                set name $type
+            }
+            "proc" {
+                set name "proc [lindex $args 0]"
+            }
+            "source" {
+                set name "source"
+            }
+        }
+
+        if { $level <= $max_level } {
+            if { [info exists seen_levels($level)] } {
+                lappend seen_levels($level) $name
+            } else {
+                set seen_levels($level) [list $name]
+            }
+        }
+
+    }
+    foreach level [lsort [array names seen_levels]] {
+        lappend scopes [json::write object                           \
+            name  [json::write string [join $seen_levels($level) ,]] \
+            variablesReference  [expr { $level + 1 }]                \
+            expensive false                                          \
+        ]
+    }
+
+    ::connection::respond $msg [json::write object \
+        scopes [json::write array {*}$scopes] \
+    ]
+}
+
+proc ::server::OnRequest_variables { msg } {
+    variable state
+    if { $state ne "DEBUGGING" } {
+        ::connection::reject $msg \
+                             "Invalid event 'scopes' in state $state"
+        return
+    }
+
+    set level [expr { [dict get $msg arguments variablesReference] - 1 }]
+
+    set variables [list]
+    set varList [dbg::getVariables $level]
+    dbg::Log message {Var list: $varList}
+    set varNames [list]
+    foreach var $varList {
+        lappend varNames [lindex $var 0]
+    }
+    set vars [dbg::getVar $level 20 $varNames]
+    dbg::Log message {Vars: $vars}
+
+
+    array set TYPES {a Array s Scalar n Unknown}
+
+    foreach tcl_var $vars {
+        lassign $tcl_var name type value
+        # TODO: We should make arrays expandable. The "value" here would be a
+        # list of name/value pairs. We might be able to interpret lists and
+        # dicts but i think the only type info we get is:
+        #  s - scalar
+        #  n - ???
+        #  a - array
+        #
+        # TODO: if the value is truncated, make it expandable ?
+        lappend variables [json::write object \
+            name [json::write string $name]   \
+            value [json::write string $value] \
+            type [json::write string $TYPES($type)]    \
+            variablesReference 0              \
+        ]
+    }
+
+    ::connection::respond $msg [json::write object \
+        variables [json::write array {*}$variables] \
+    ]
+}
+
+proc ::server::OnRequest_evaluate { msg } {
+    if { [catch {set index [dict get $msg arguments frameId]} err] } {
+        set index 0
+    }
+
+    set expression [dict get $msg arguments expression]
+
+    set stack [list]
+    catch { set stack [dbg::getStack] } 
+
+    # level loc type args...
+    set level [lindex [lindex $stack $index] 0]
+
+    variable eval_requests
+    set eval_requests([::dbg::evaluate $level $expression]) $msg
+}
+
+proc ::server::OnRequest_disconnect { msg } {
+    catch { dbg::quit }
 
     # TODO restart ? terminateDebuggee ?
 
@@ -356,8 +478,28 @@ proc ::server::OnRequest_disconnect { msg } {
 
 proc ::server::OnRequest_pause { msg } {
     dbg::interrupt
+
+    ::connection::accept $msg
 }
 
+proc ::server::OnRequest_next { msg } {
+    dbg::step over
+
+    ::connection::accept $msg
+}
+
+proc ::server::OnRequest_stepIn { msg } {
+    dbg::step in
+
+    ::connection::accept $msg
+}
+
+proc ::server::OnRequest_stepOut { msg } {
+    dbg::step out
+
+    ::connection::accept $msg
+}
+    
 proc ::server::linebreakHandler { args } {
     puts stderr "Line break: $args"
 
@@ -400,8 +542,18 @@ proc ::server::errorHandler { args } {
     puts stderr "Error: $args"
 }
 
-proc ::server::resultHandler { args } {
-    puts stderr "REsult: $args"
+proc ::server::resultHandler { id code result errCode errInfo } {
+    variable eval_requests
+    if { [info exists eval_requests($id)] } {
+        set msg $eval_requests($id)
+        unset eval_requests($id)
+        ::connection::respond $msg [json::write object \
+            result [::json::write string $result]      \
+            variablesReference 0                       \
+        ]
+    } else {
+        ::dbg::Log error {Unexpected response to request with id $id ($result)}
+    }
 }
 
 proc ::server::attachHandler { request } {
