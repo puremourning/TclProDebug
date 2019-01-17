@@ -138,22 +138,60 @@ proc ::server::OnRequest_initialize { msg } {
 proc ::server::OnRequest_setBreakpoints { msg } {
     variable state
 
-    if { $state ne "CONFIGURING" } {
+    if { $state ne "CONFIGURING" && $state ne "DEBUGGING" } {
         ::connection::reject $msg \
                              "Invalid event 'setBreakpoints' in state $state"
         return
     }
 
-    # TODO
-    ::connection::respond $msg [json::write object \
-        breakpoints [json::write array]            \
+    set file [dict get $msg arguments source path]
+    set block [blk::makeBlock $file]
+
+    foreach bp [dbg::getLineBreakpoints] {
+        set bpFile [blk::getFile [loc::getBlock [break::getLocation $bp]]]
+        ::dbg::Log debug {Checking bp '$bp' against $file vs $bpFile}
+        if { $bpFile  == $file } {
+            ::dbg::Log debug {Remove $bp}
+            dbg::removeBreakpoint $bp
+        }
+    } 
+
+    if { [dict exists $msg arguments breakpoints] } {
+        foreach breakpoint [dict get $msg arguments breakpoints] {
+            set line [dict get $breakpoint line]
+            set location [loc::makeLocation $block $line]
+            ::dbg::Log debug {Adding bp at $file:$line: $location}
+            dbg::addLineBreakpoint $location
+        }
+    }
+
+    set breakpoints [list]
+    foreach bp [dbg::getLineBreakpoints] {
+        set loc [break::getLocation $bp]
+        set block [loc::getBlock $loc]
+        ::dbg::Log debug {Checking return bp $bp against $file vs [blk::getFile $block]}
+        if { [blk::getFile $block] == $file } {
+            ::dbg::Log debug {Returning bp $bp}
+            lappend breakpoints [json::write object                            \
+                verified true                                                  \
+                source [json::write object                                     \
+                    name [json::write string [file tail [blk::getFile $block]]]\
+                    path [json::write string [blk::getFile $block]]            \
+                ]                                                              \
+                line [loc::getLine $loc]                                       \
+            ]
+        }
+    }
+
+    ::connection::respond $msg [json::write object      \
+        breakpoints [json::write array {*}$breakpoints] \
     ]
 }
 
 proc ::server::OnRequest_setFunctionBreakpoints { msg } {
     variable state
 
-    if { $state ne "CONFIGURING" } {
+    if { $state ne "CONFIGURING" && $state ne "DEBUGGING" } {
         ::connection::reject $msg \
                              "Invalid event 'setFunctionBreakpoints' in state\
                               $state"

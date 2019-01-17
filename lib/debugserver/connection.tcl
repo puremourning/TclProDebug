@@ -32,9 +32,12 @@ proc ::connection::connect { handler } {
 
     set readState_ READ_HEADER
 
-    # TODO: perhaps we should actually use -translation crlf?
+    # TODO: perhaps we should actually use -translation crlf? 
+    # TODO: perhaps we should use -encoding utf-8 ?
     fconfigure stdin -blocking 0 -translation binary -buffering none
     fconfigure stdout -blocking 0 -translation binary -buffering none
+    # we want the logging (which goes to stderr) to write sync for debugging
+    # purposes
     fconfigure stderr -blocking 1 -translation auto -buffering none
 
     fileevent stdin readable ::connection::_read
