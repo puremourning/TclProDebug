@@ -525,6 +525,12 @@ proc ::server::OnRequest_pause { msg } {
     ::connection::accept $msg
 }
 
+proc ::server::OnRequest_continue { msg } {
+    dbg::run
+
+    ::connection::accept $msg
+}
+
 proc ::server::OnRequest_next { msg } {
     dbg::step over
 
@@ -579,10 +585,20 @@ proc ::server::cmdresultHandler { args } {
 
 proc ::server::exitHandler { args } {
     puts stderr "Exit: $args"
+
+    #TODO: We don't get the exitCode from the debugger ?
+    ::connection::notify exited [json::write object \
+        exitCode 0                                  \
+    ]
+    ::connection::notify terminated [json::write object]
 }
 
-proc ::server::errorHandler { args } {
-    puts stderr "Error: $args"
+proc ::server::errorHandler { errMsg errStk errCode uncaught } {
+    ::connection::notify stopped [json::write object  \
+        reason      [json::write string "exception"] \
+        description [json::write string "Error: $errMsg"] \
+        threadId    1
+    ]
 }
 
 proc ::server::resultHandler { id code result errCode errInfo } {
