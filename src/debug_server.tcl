@@ -25,7 +25,7 @@ proc ::debugger::init {} {
         aboutCopyright "" \
         appType local \
         iconImage $libdir/images/debugUnixIcon.gif \
-        productName "Debugger" \
+        productName "DebugAdapter" \
     ]
 
     # Remove the send command.  This will keep other applications
