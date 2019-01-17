@@ -5,6 +5,7 @@ namespace eval ::server {
     variable state UNINITIALIZED
     variable options
     variable libdir_
+    variable handlingError 0
 }
 
 proc ::server::start { libdir } {
@@ -544,7 +545,14 @@ proc ::server::OnRequest_stepIn { msg } {
 }
 
 proc ::server::OnRequest_stepOut { msg } {
-    dbg::step out
+    variable handlingError
+
+    if { $handlingError > 0 } {
+        dbg::ignoreError
+        incr handlingError -1
+    } else {
+        dbg::step out
+    }
 
     ::connection::accept $msg
 }
@@ -594,6 +602,8 @@ proc ::server::exitHandler { args } {
 }
 
 proc ::server::errorHandler { errMsg errStk errCode uncaught } {
+    variable handlingError
+    incr handlingError
     ::connection::notify stopped [json::write object  \
         reason      [json::write string "exception"] \
         description [json::write string "Error: $errMsg"] \
