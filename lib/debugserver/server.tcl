@@ -493,6 +493,11 @@ proc ::server::OnRequest_evaluate { msg } {
     }
 
     set expression [dict get $msg arguments expression]
+    set context "watch"
+    catch { set context [dict get $msg arguments context] }
+    if { $context == "hover" } {
+        set expression "set $expression"
+    }
 
     set stack [list]
     catch { set stack [dbg::getStack] } 
