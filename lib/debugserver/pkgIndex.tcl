@@ -13,4 +13,4 @@ namespace eval debugserver {
         }
     }
 }
-package ifneeded debugserver 1.0 [list source [debugserver::Load $dir]]
+package ifneeded debugserver 1.0 [list debugserver::Load $dir]
