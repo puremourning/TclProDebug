@@ -75,6 +75,10 @@ proc ::Source { path } {
     }
 }
 
+proc ::bgerror { msg } {
+    ::server::bgerror $msg
+}
+
 Source [file join $::debugger::libdir pref.tcl]
 Source [file join $::debugger::libdir system.tcl]
 
@@ -103,6 +107,7 @@ global APP_STATE
 set APP_STATE "running"
 while { $APP_STATE eq "running" } {
     vwait APP_STATE
+    puts "APP_STATE is $APP_STATE"
 }
 
 puts "Quiting debug adapter due to state: $APP_STATE"

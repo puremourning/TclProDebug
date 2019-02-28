@@ -16,6 +16,18 @@ proc ::server::start { libdir } {
     ::connection::connect ::server::handle
 }
 
+proc ::server::output { category msg args } {
+    ::connection::notify output [json::write object \
+        category [json::write string $category]     \
+        output   [json::write string $msg]          \
+        {*}$args
+    ]
+}
+
+proc ::server::bgerror { msg } {
+    ::server::output console $msg
+}
+
 proc ::server::handle { msg } {
     set type [dict get $msg type]
     switch -exact -- $type {
@@ -517,17 +529,20 @@ proc ::server::_DoEvaluate { msg } {
     }
 
     set stack [list]
-    catch { set stack [dbg::getStack] } 
+    catch { set stack [lreverse [dbg::getStack]] } 
 
     # level loc type args...
     set level [lindex [lindex $stack $index] 0]
 
-    variable eval_requests
-    set eval_requests([::dbg::evaluate $level $expression]) $msg
+    set evaluating [list [::dbg::evaluate $level $expression] $msg]
 }
 
 proc ::server::OnRequest_disconnect { msg } {
-    catch { dbg::quit }
+    if { [catch { dbg::quit } output] } {
+        # TODO: If we never started the app, the dbg::quit won't work.
+        ::dbg::Log error {dbg::quit failed $output $::errorInfo}
+        ::connection::notify terminated [json::write object]
+    }
 
     # TODO restart ? terminateDebuggee ?
 
@@ -654,6 +669,6 @@ proc ::server::attachHandler { request } {
 }
 
 proc ::server::instrumentHandler { status block } {
-    puts stderr "Instrumenting: $status ($block)"
+    ::server::output console "Instrument $status for [blk::getFile $block]"
 }
 
