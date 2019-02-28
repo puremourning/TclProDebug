@@ -37,12 +37,34 @@
 # Results:
 #	Returns 1 on success and 0 on failure.
 
+proc debugger_accept { channel clientAddress clientPort } {
+    global debugger_accepted
+    puts stderr "New connection from $clientAddress:$clientPort"
+    if { [info exists debugger_accepted] } {
+        error "Too many clients"
+    }
+    set debugger_accepted $channel
+}
 
-proc debugger_init {{host 127.0.0.1} {port 2576}} {
+proc debugger_init_accept { {port  2576} } {
+    debugger_init localhost $port 1
+}
+
+proc debugger_init {{host 127.0.0.1} {port 2576} {server 0}} {
     global tcl_version
 
-    if {[catch {set socket [socket $host $port]}] != 0} {
-	return 0
+    if { $server } {
+        global debugger_accepted
+        if {[catch {set socket [socket -server debugger_accept $port]}] != 0} {
+            return 0
+        }
+        vwait debugger_accepted
+        close $socket
+        set socket $debugger_accepted 
+    } else {
+        if {[catch {set socket [socket $host $port]}] != 0} {
+            return 0
+        }
     }
     fconfigure $socket -blocking 1 -translation binary
 

@@ -680,22 +680,37 @@ proc ::server::errorHandler { errMsg errStk errCode uncaught } {
 
 proc ::server::resultHandler { id code result errCode errInfo } {
     variable eval_requests
-    if { [info exists eval_requests($id)] } {
-        set msg $eval_requests($id)
-        unset eval_requests($id)
+    variable evaluating
+
+    if { [llength $evaluating] ==  0 || [lindex $evaluating 0] ne $id } {
+        ::dbg::Log error {Unexpected response to request with id $id ($result)}
+    } else {
+        set msg [lindex $evaluating 1]
+        set evaluating [list]
         ::connection::respond $msg [json::write object \
             result [::json::write string $result]      \
             variablesReference 0                       \
         ]
-    } else {
-        ::dbg::Log error {Unexpected response to request with id $id ($result)}
+    }
+
+    if { [llength $eval_requests] > 0 } {
+        set msg [lindex $eval_requests 0]
+        set eval_requests [lrange $eval_requests 1 end]
+
+        ::server::_DoEvaluate $msg
     }
 }
 
 proc ::server::attachHandler { request } {
     variable state
+    variable attachRequest
     set state DEBUGGING
     puts stderr "The debugger attached!"
+
+    if { $request == "REMOTE" } {
+        set request $attachRequest
+    } 
+
     if { [::get $request true arguments pauseOnEntry] == "true" } {
         dbg::step any
     } else {

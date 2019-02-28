@@ -1,0 +1,33 @@
+{
+    "adapters": {
+        "tclpro": {
+            "name": "tclpro",
+            "command": [
+                "/inf10xl_user1/infrastructure_release/vdev_build/core/third-party_LINUX_X86/tcl-8.5.16/64/bin/tclsh8.5",
+                "/mma/users/benj/proj/tcl-debug/TclProDebug/bin/debugadapter"
+            ]
+        }
+    },
+    "configurations": {
+        "launch": {
+            "adapter": "tclpro",
+            "configuration": {
+                "request": "launch",
+                "tclsh": "/usr/bin/wish",
+                "cwd": "${workspaceRoot}",
+                "target": "${workspaceRoot}/main.tcl",
+                "args": [ "this", "is", "a", "test" ],
+                "pauseOnEntry": true
+            }
+        },
+        "attach": {
+            "adapter": "tclpro",
+            "configuration": {
+                "request": "attach",
+                "pauseOnEntry": true,
+                "host": "${host}",
+                "port": "${port}"
+            }
+        }
+    }
+}

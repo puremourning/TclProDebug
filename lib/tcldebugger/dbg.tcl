@@ -111,6 +111,22 @@ namespace eval dbg {
 }
 # end namespace dbg
 
+# dbg::attach_remote --
+#       Connects to a remote application on the supplied port
+#       
+# Arguments
+#       host            The host on which the application is listening
+#       port            The port on which the application is listening
+#
+proc dbg::attach_remote { host port } {
+    # connect to the remote, then pretend that it connected to us
+    if {[catch {set socket [socket $host $port]}] != 0} {
+        return 0
+    }
+
+    ::dbg::HandleConnect $socket $host $port
+}
+
 # dbg::start --
 #
 #	Starts the application.  Generates an error is one is already running.

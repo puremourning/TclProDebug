@@ -1,0 +1,29 @@
+#!/bin/sh
+#\
+exec tclsh "$0" "$@"
+
+set TclProDirectory [file dirname [file dirname [info script]]]
+
+lappend auto_path [file join $TclProDirectory lib remotedebug]
+
+package require remotedebug 2.0
+
+set port 2345
+if { [info exists ::env(TCLPRO_DEBUG_PORT)] } {
+    set port 2345
+}
+
+puts stderr "Listening for connections on $port"
+if { ! [debugger_init_accept $port] } {
+    puts stderr "Unable to connect?"
+    exit 1
+}
+
+
+set script [lindex $argv 0]
+set argv [lrange $argv 1 end]
+set argv0 $script
+
+puts "Ready? Let's go. Running $argv0 with $argv"
+
+source $argv0
