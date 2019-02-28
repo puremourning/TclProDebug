@@ -227,14 +227,7 @@ proc ::server::OnRequest_configurationDone { msg } {
     ::connection::accept $msg
 }
 
-proc ::server::OnRequest_launch { msg } {
-    variable state
-    if { $state ne "CONFIGURED" } {
-        ::connection::reject $msg \
-                             "Invalid event 'launch' in state $state"
-        return
-    }
-
+proc ::server::_DoLaunch { msg } {
     set args [dict get $msg arguments]
     set ::launch_request $msg
     dbg::start [dict get $args tclsh] \
@@ -242,6 +235,49 @@ proc ::server::OnRequest_launch { msg } {
                [dict get $args target] \
                [dict get $args args] \
                $msg
+}
+
+proc ::server::_DoAttach { msg } {
+    set args [dict get $msg arguments]
+    set ::attach_request $msg
+
+    variable attachRequest
+    set attachRequest $msg
+
+    dbg::attach_remote [dict get $args host] \
+                       [dict get $args port]
+
+
+}
+
+proc ::server::OnRequest_launch { msg } {
+    variable state
+    if { $state eq "CONFIGURING" } {
+        # HACK: Wait until we have all the configuration before launching
+        after 1000 [list ::server::OnRequest_launch $msg]
+        return
+    } elseif { $state ne "CONFIGURED" } {
+        ::connection::reject $msg \
+                             "Invalid event 'launch' in state $state"
+        return
+    }
+
+    _DoLaunch $msg
+}
+
+proc ::server::OnRequest_attach { msg } {
+    variable state
+    if { $state eq "CONFIGURING" } {
+        # HACK: Wait until we have all the configuration before launching
+        after 1000 [list ::server::OnRequest_attach $msg]
+        return
+    } elseif { $state ne "CONFIGURED" } {
+        ::connection::reject $msg \
+                             "Invalid event 'launch' in state $state"
+        return
+    }
+
+    _DoAttach $msg
 }
 
 proc ::server::OnRequest_threads { msg } {
