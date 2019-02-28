@@ -355,7 +355,7 @@ proc ::server::OnRequest_stackTrace { msg } {
     
     set stack [list]
     
-    catch { set stack [dbg::getStack] } 
+    catch { set stack [lreverse [dbg::getStack]] } 
 
     set frames [list]
 
@@ -443,7 +443,7 @@ proc ::server::OnRequest_scopes { msg } {
     set index [dict get $msg arguments frameId]
 
     set scopes [list]
-    catch { set stack [dbg::getStack] } 
+    catch { set stack [lreverse [dbg::getStack]] } 
 
     set max_level -1
     set tcl_frame [lindex $stack $index]
@@ -479,7 +479,7 @@ proc ::server::OnRequest_scopes { msg } {
         }
 
     }
-    foreach level [lsort [array names seen_levels]] {
+    foreach level [lsort -decreasing [array names seen_levels]] {
         lappend scopes [json::write object                           \
             name  [json::write string [join $seen_levels($level) ,]] \
             variablesReference  [expr { $level + 1 }]                \
