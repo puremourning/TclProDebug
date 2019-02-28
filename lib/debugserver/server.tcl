@@ -6,6 +6,8 @@ namespace eval ::server {
     variable options
     variable libdir_
     variable handlingError 0
+    variable eval_requests [list]
+    variable evaluating [list]
 }
 
 proc ::server::start { libdir } {
@@ -489,6 +491,20 @@ proc ::server::OnRequest_variables { msg } {
 }
 
 proc ::server::OnRequest_evaluate { msg } {
+
+    variable eval_requests
+    variable evaluating
+
+    if { [llength $evaluating] == 0 } {
+        ::server::_DoEvaluate $msg
+    } else {
+        lappend eval_requests $msg
+    }
+}
+
+proc ::server::_DoEvaluate { msg } {
+    variable evaluating
+
     if { [catch {set index [dict get $msg arguments frameId]} err] } {
         set index 0
     }
