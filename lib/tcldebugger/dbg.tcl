@@ -882,15 +882,13 @@ proc dbg::validateBreakpoints {file blk} {
 	if {$newLine != $line} {
 	    set newLoc [loc::makeLocation $blk $newLine]
 	    set newBp [dbg::moveLineBreakpoint $bp $newLoc]
+            # TODO: Use newBp to report it to the client ?
 	    set warning 1
 	}
     }
 
     if {$warning && [pref::prefGet warnInvalidBp]} {
-	set msg "invalid breakpoints found in $file have been moved to valid lines."
-
-	tk_messageBox -icon warning -type ok -title "Warning" \
-		-parent [gui::getParent] -message "Warning:  $msg"
+	Log "Warning" {invalid breakpoints found in $file have been moved to valid lines.}
     }
     return
 }
