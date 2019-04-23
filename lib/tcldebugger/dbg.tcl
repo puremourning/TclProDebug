@@ -108,6 +108,8 @@ namespace eval dbg {
     #   tempBreakpoint	The current run-to-line breakpoint.
 
     variable tempBreakpoint {}
+
+    variable fileMapper
 }
 # end namespace dbg
 
@@ -1607,6 +1609,11 @@ proc dbg::ignoreError {} {
 #	Returns the instrumented code or "" if the instrumentation failed.
 
 proc dbg::Instrument {file script} {
+    variable fileMapper
+
+    if { [info exists fileMapper] } {
+        set file [$fileMapper tolocal $file]
+    }
 
     # Get a block for the new code.
 

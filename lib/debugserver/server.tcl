@@ -4,6 +4,7 @@ namespace eval ::server {
 
     variable state UNINITIALIZED
     variable options
+    variable launchConfig
     variable libdir_
     variable handlingError 0
     variable eval_requests [list]
@@ -13,6 +14,7 @@ namespace eval ::server {
 proc ::server::start { libdir } {
     variable libdir_
     set libdir_ $libdir
+    set ::dbg::fileMapper ::server::mapFileName
     ::connection::connect ::server::handle
 }
 
@@ -228,26 +230,24 @@ proc ::server::OnRequest_configurationDone { msg } {
 }
 
 proc ::server::_DoLaunch { msg } {
-    set args [dict get $msg arguments]
-    set ::launch_request $msg
-    dbg::start [dict get $args tclsh] \
-               [dict get $args cwd] \
-               [dict get $args target] \
-               [dict get $args args] \
+    variable launchConfig
+    set launchConfig [dict get $msg arguments]
+    dbg::start [dict get $launchConfig tclsh] \
+               [dict get $launchConfig cwd] \
+               [dict get $launchConfig target] \
+               [dict get $launchConfig args] \
                $msg
 }
 
 proc ::server::_DoAttach { msg } {
-    set args [dict get $msg arguments]
-    set ::attach_request $msg
 
     variable attachRequest
+    variable launchConfig
     set attachRequest $msg
 
-    dbg::attach_remote [dict get $args host] \
-                       [dict get $args port]
-
-
+    set launchConfig [dict get $msg arguments]
+    dbg::attach_remote [dict get $launchConfig host] \
+                       [dict get $launchConfig port]
 }
 
 proc ::server::OnRequest_launch { msg } {
@@ -723,3 +723,17 @@ proc ::server::instrumentHandler { status block } {
     ::server::output console "Instrument $status for [blk::getFile $block]"
 }
 
+
+proc ::server::mapFileName { direction fileName } {
+    variable launchConfig
+    if { [dict exists $launchConfig $direction] } {
+        foreach mapping [dict get $launchConfig $direction] {
+            dict for {pattern replacement} $mapping  {
+                if { [regsub $pattern $fileName $replacement mapped] > 0 } {
+                    return $mapped
+                }
+            }
+        }
+    }
+    return $fileName
+}
