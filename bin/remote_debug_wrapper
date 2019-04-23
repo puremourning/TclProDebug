@@ -10,7 +10,7 @@ package require remotedebug 2.0
 
 set port 2345
 if { [info exists ::env(TCLPRO_DEBUG_PORT)] } {
-    set port 2345
+    set port $::env(TCLPRO_DEBUG_PORT)
 }
 
 puts stderr "Listening for connections on $port"
