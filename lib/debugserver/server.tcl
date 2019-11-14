@@ -125,10 +125,9 @@ proc ::server::OnRequest_initialize { msg } {
 
     dbg::initialize $libdir_
 
-    if { "-debug" in $::argv } {
-        set ::dbg::debug 1
+    if { "-quiet" in $::argv } {
+        set ::dbg::debug 0
     }
-
 
     # read client capabilities/options
 
