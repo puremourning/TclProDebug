@@ -9,6 +9,8 @@ namespace eval ::server {
     variable handlingError 0
     variable eval_requests [list]
     variable evaluating [list]
+
+    variable onNewState
 }
 
 proc ::server::start { libdir } {
@@ -141,7 +143,7 @@ proc ::server::OnRequest_initialize { msg } {
     set options(pathFormat) path
     set options(supportsRunInterminalRequest) 0
 
-    set state CONFIGURING
+    setState CONFIGURING
     ::connection::respond $msg [json::write object \
         supportsConfigurationDoneRequest true     \
     ]
@@ -150,10 +152,14 @@ proc ::server::OnRequest_initialize { msg } {
     # connection later on the laucnh request, so we just send the initialized
     # notification now
     ::connection::notify initialized
+
+    dbg::Log info {Initialized debug adapter}
 }
 
 proc ::server::OnRequest_setBreakpoints { msg } {
     variable state
+
+    dbg::Log info {setBreakpoints request in $state}
 
     if { $state ne "CONFIGURING" && $state ne "DEBUGGING" } {
         ::connection::reject $msg \
@@ -208,6 +214,8 @@ proc ::server::OnRequest_setBreakpoints { msg } {
 proc ::server::OnRequest_setFunctionBreakpoints { msg } {
     variable state
 
+    dbg::Log info {setFunctionBreakpoints request in $state}
+
     if { $state ne "CONFIGURING" && $state ne "DEBUGGING" } {
         ::connection::reject $msg \
                              "Invalid event 'setFunctionBreakpoints' in state\
@@ -224,12 +232,17 @@ proc ::server::OnRequest_setFunctionBreakpoints { msg } {
 proc ::server::OnRequest_configurationDone { msg } {
     # not sure we really care, but hey-ho
     variable state
-    set state CONFIGURED
+
+    dbg::Log info {configurationDone request in $state}
+
+    setState CONFIGURED
 
     ::connection::accept $msg
 }
 
 proc ::server::_DoLaunch { msg } {
+    dbg::Log info {launch!}
+
     variable launchConfig
     set launchConfig [dict get $msg arguments]
     dbg::start [dict get $launchConfig tclsh] \
@@ -240,6 +253,7 @@ proc ::server::_DoLaunch { msg } {
 }
 
 proc ::server::_DoAttach { msg } {
+    dbg::Log info {attach!}
 
     variable attachRequest
     variable launchConfig
@@ -252,9 +266,12 @@ proc ::server::_DoAttach { msg } {
 
 proc ::server::OnRequest_launch { msg } {
     variable state
+    variable onNewState
+    dbg::Log info {launch request in $state}
     if { $state eq "CONFIGURING" } {
-        # HACK: Wait until we have all the configuration before launching
-        after 1000 [list ::server::OnRequest_launch $msg]
+        # Wait until we have all the configuration before launching
+        dbg::Log info {delaying launch request in $state until CONFIGURED}
+        runOnState CONFIGURED [list ::server::OnRequest_launch $msg]
         return
     } elseif { $state ne "CONFIGURED" } {
         ::connection::reject $msg \
@@ -267,9 +284,11 @@ proc ::server::OnRequest_launch { msg } {
 
 proc ::server::OnRequest_attach { msg } {
     variable state
+    dbg::Log info {attach request in $state}
     if { $state eq "CONFIGURING" } {
-        # HACK: Wait until we have all the configuration before launching
-        after 1000 [list ::server::OnRequest_attach $msg]
+        # Wait until we have all the configuration before launching
+        dbg::Log info {delaying attach request in $state}
+        runOnState CONFIGURED [list ::server::OnRequest_attach $msg]
         return
     } elseif { $state ne "CONFIGURED" } {
         ::connection::reject $msg \
@@ -704,7 +723,7 @@ proc ::server::resultHandler { id code result errCode errInfo } {
 proc ::server::attachHandler { request } {
     variable state
     variable attachRequest
-    set state DEBUGGING
+    setState DEBUGGING
     puts stderr "The debugger attached!"
 
     if { $request == "REMOTE" } {
@@ -723,6 +742,30 @@ proc ::server::instrumentHandler { status block } {
     ::server::output console "Instrument $status for [blk::getFile $block]"
 }
 
+proc ::server::runOnState { newState script } {
+    variable onNewState
+    if { ![info exists onNewState($newState)] } {
+        set onNewState($newState) [list]
+    }
+
+    lappend onNewState($newState) $script
+}
+
+proc ::server::setState { newState } {
+    variable state
+    variable onNewState
+
+    set state $newState
+    
+    if { [info exists onNewState($newState)] } {
+        while { [llength $onNewState($newState)] } {
+            set script [lindex $onNewState($newState) 0]
+            set onNewState($newState) [lrange $onNewState($newState) 1 end]
+            eval $script
+        }
+        unset onNewState($newState)
+    }
+}
 
 proc ::server::mapFileName { direction fileName } {
     variable launchConfig
