@@ -122,10 +122,24 @@ namespace eval dbg {
 #
 proc dbg::attach_remote { host port } {
     # connect to the remote, then pretend that it connected to us
-    if {[catch {set socket [socket $host $port]}] != 0} {
+    set tries 10
+    set connected 0
+    dbg::Log info {Connecting to to $host:$port}
+    for { set try 0 } { !$connected && $try < $tries } { incr try } {
+        if {[catch {set socket [socket $host $port]} err]} {
+            # caught an error
+            after 500
+            dbg::Log info {Waiting 500ms to connect to $host:$port: $err}
+        } else {
+            set connected 1
+        }
+    }
+
+    if { !$connected } {
         return 0
     }
 
+    dbg::Log info {Connected to $host:$port with sock $socket}
     ::dbg::HandleConnect $socket $host $port
 }
 
@@ -1346,7 +1360,6 @@ proc dbg::HandleClientExit {} {
 #	None.
 
 proc dbg::HandleConnect {sock host port} {
-    puts stderr "HandleConnect"
     variable nubSocket
     variable appState
 

@@ -257,8 +257,8 @@ proc ::server::_DoAttach { msg } {
     variable attachRequest
     variable launchConfig
     set attachRequest $msg
-
     set launchConfig [dict get $msg arguments]
+
     dbg::attach_remote [dict get $launchConfig host] \
                        [dict get $launchConfig port]
 }
