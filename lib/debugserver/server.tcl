@@ -168,7 +168,7 @@ proc ::server::OnRequest_initialize { msg } {
     ]
 
     # We don't have anything more to do here. We will initialize the debugging
-    # connection later on the laucnh request, so we just send the initialized
+    # connection later on the launch request, so we just send the initialized
     # notification now
     ::connection::notify initialized
 
@@ -403,7 +403,7 @@ proc ::server::OnRequest_stackTrace { msg } {
         lassign [lrange $tcl_frame 0 2] level loc type
         set args [lrange $tcl_frame 3 end]
 
-        ::dbg::Log message {frame: $tcl_frame}
+        ::dbg::Log message {frame: $tcl_frame ($index);}
         ::dbg::Log message {level/loc/type/args: $level $loc $type $args}
 
         switch -exact -- $type {
@@ -418,10 +418,12 @@ proc ::server::OnRequest_stackTrace { msg } {
             }
         }
 
+        append name "<$level>"
+
         if { $loc == {} } {
             # we don't know the source yet ?
             lappend frames [json::write object    \
-                id     $level                     \
+                id     $index                     \
                 name   [json::write string $name] \
                 line    0 \
                 column  0 \
