@@ -1,5 +1,28 @@
 package require parser
 
+#
+# Specification
+#
+# Launch:
+#   tclsh  (string) path to tclsh to launch the script with
+#   cwd    (string) path of working directory of script
+#   target (string) path to the script to run
+#   args   (list)   arguments to 'target'
+#
+# Attach:
+#   host (string) IPv4 hostname (e.g. localhost)
+#   port (int)    IPv4 port     (e.g. 2345, as supplied to remote_debug_wrapper)
+#
+# Both:
+#   tolocal (mapping): defines regsubs which map remote file names to local
+#   filenames when remote debugging 
+#     keys: the keys are regular expression matches 
+#     values: regular expression replacement strings
+#        (as in [regsub $key $filename $value])
+#
+#   pauseOnEntry (string: true or false) whether to stop after connecting the
+#                                        debugger
+
 namespace eval ::server {
 
     variable state UNINITIALIZED
