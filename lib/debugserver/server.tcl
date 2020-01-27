@@ -520,7 +520,7 @@ proc ::server::OnRequest_scopes { msg } {
         lappend scopes [json::write object                           \
             name  [json::write string [join $seen_levels($level) ,]] \
             variablesReference  [expr { $level + 1 }]                \
-            expensive false                                          \
+            expensive true                                           \
         ]
     }
 
