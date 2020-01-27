@@ -467,12 +467,10 @@ proc dbg::unregister {event script} {
 proc dbg::DeliverEvent {event args} {
     variable registeredEvent
 
-    puts stderr "DeliverEvent $event '$args'"
+    dbg::Log debug {"DeliverEvent $event: '$args'" }
 
     # Break up args and reform it as a valid list so we can safely pass it
     # through uplevel.
-
-    puts stderr "Fire! $event"
 
     set newList {}
     foreach arg $args {
@@ -1390,7 +1388,7 @@ proc dbg::HandleConnect {sock host port} {
 proc dbg::SendMessage {args} {
     variable nubSocket
 
-    puts stderr "NUB TX: $args"
+    dbg::Log nub { NUB TX: $args }
 
     puts $nubSocket [string length $args]
     puts -nonewline $nubSocket $args
@@ -1435,7 +1433,7 @@ proc dbg::GetMessage {} {
 #	None.
 
 proc dbg::SendAsync {args} {
-    puts stderr "SendAsync $args"
+    dbg::Log nub { SendAsync $args }
     SendMessage "SEND" 0 $args
     return
 }
@@ -1504,7 +1502,7 @@ proc dbg::HandleNubEvent {} {
 
 	set msg [GetMessage]
 
-        puts stderr "NUB RX: $msg"
+        dbg::Log nub { NUB RX: $msg }
 
 	# If the nub closed the connection, generate an "exit" event.
 
@@ -1578,7 +1576,6 @@ proc dbg::HandleNubEvent {} {
     } msg]
     if {$result == 1} {
 	Log error {Caught error in dbg::HandleNubEvent: $msg at \n$::errorInfo}
-        puts stderr "Error in HandleNubEvent: $msg $::errorInfo"
     }
     return
 }
@@ -1771,18 +1768,13 @@ proc dbg::InitializeNub {nubVersion tclVersion clientData} {
 #	None.
 
 proc dbg::initInstrument {} {
-    puts stderr "initInstrument"
     if {$dbg::appState != "dead"} {
-        puts stderr "app is alive"
 	SendAsync set DbgNub(dynProc)      [pref::prefGet instrumentDynamic]
 	SendAsync set DbgNub(includeFiles) [pref::prefGet doInstrument]
 	SendAsync set DbgNub(excludeFiles) [pref::prefGet dontInstrument]
 	SendAsync set DbgNub(autoLoad)   [pref::prefGet autoLoad]
 	SendAsync set DbgNub(errorAction)  [pref::prefGet errorAction]
-    } else {
-        puts stderr "app is dead"
     }
-    puts stderr "initInstrument done"
     return
 }
 

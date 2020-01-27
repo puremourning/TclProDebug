@@ -202,8 +202,6 @@ proc ::connection::_read_body { } {
     # use string operaitons, but the data is really in utf-8, with bytes)
     set msg [json::json2dict [encoding convertfrom utf-8 $payload]]
 
-    puts stderr "RX MSG: $msg"
-
     if { [catch {
         if { [dict get $msg type] == "response" } {
             set seqNo [dict get $msg request_seq]
@@ -219,7 +217,6 @@ proc ::connection::_read_body { } {
 }
 
 proc ::connection::_write { msg } {
-    puts stderr "TX MSG: $msg"
     puts -nonewline stdout "Content-Length: [string length $msg]\r\n"
     puts -nonewline stdout "\r\n"
     puts -nonewline stdout "$msg\r\n"
