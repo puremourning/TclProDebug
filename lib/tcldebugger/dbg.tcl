@@ -226,13 +226,16 @@ proc dbg::start {application startDir script argList clientData} {
 		}
 	    }
 
-        set _argv [list 127.0.0.1 $serverPort $script $clientData {*}$args]
-        set _argc [llength $_argv]
-        lappend _input variable argc $_argc argv $_argv
-        set f [open [file join $libDir appLaunch.tcl]]
-        exec $application <<$_input\n[read $f] &
-        puts stderr "Launched $application with $_input" 
-        close $f
+            # TODO: Support runInTerminal by executing $application in a
+            # terminal e.g. /usr/bin/bash $appliction < $f.
+
+            set _argv [list 127.0.0.1 $serverPort $script $clientData {*}$args]
+            set _argc [llength $_argv]
+            lappend _input variable argc $_argc argv $_argv
+            set f [open [file join $libDir appLaunch.tcl]]
+            exec $application <<$_input\n[read $f] &
+            puts stderr "Launched $application with $_input" 
+            close $f
 	}
     } msg]} {
 	# Make sure to restore the original directory before throwing 

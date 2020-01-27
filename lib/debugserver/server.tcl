@@ -22,6 +22,7 @@ package require parser
 #
 #   pauseOnEntry (string: true or false) whether to stop after connecting the
 #                                        debugger
+#   extensionDirs (list): List of glob patterns to find *.pdx files to source
 
 namespace eval ::server {
 
@@ -264,6 +265,9 @@ proc ::server::_DoLaunch { msg } {
 
     variable launchConfig
     set launchConfig [dict get $msg arguments]
+
+    ::server::loadExtensions $launchConfig
+
     dbg::start [dict get $launchConfig tclsh] \
                [dict get $launchConfig cwd] \
                [dict get $launchConfig target] \
@@ -279,8 +283,26 @@ proc ::server::_DoAttach { msg } {
     set attachRequest $msg
     set launchConfig [dict get $msg arguments]
 
+    ::server::loadExtensions $launchConfig
+
     dbg::attach_remote [dict get $launchConfig host] \
                        [dict get $launchConfig port]
+}
+
+proc ::server::loadExtensions { launchConfig } {
+    if { [dict exists $launchConfig extensionDirs] } {
+        set files [list]
+        foreach dir [dict get $launchConfig extensionDirs] {
+            set files [concat $files [glob -nocomplain [file join $dir *.pdx]]]
+        }
+
+        foreach file $files {
+            dbg::Log message {Loading extension $file}
+            if {[catch {uplevel \#0 [list source $file]} err]} {
+                bgerror "Error loading $file:\n$err"
+            }
+        }
+    } 
 }
 
 proc ::server::OnRequest_launch { msg } {
