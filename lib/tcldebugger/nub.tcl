@@ -2021,8 +2021,9 @@ proc DbgNub_Return {args} {
     set realErrorInfo ""
     if {[llength $args] % 2} {
         array set optArray [lrange $args 0 end-1]
-    } else { array set optArray $args }
-    array set optArray $args
+    } else {
+        array set optArray $args
+    }
     foreach {optPattern optName optVar} \
       {-c* -code realCode -errorc* -errorcode realErrorCode -errori* -errorinfo realErrorInfo -l* -level realLevel} {
         set optStub [array names optArray $optPattern]
