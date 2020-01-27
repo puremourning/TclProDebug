@@ -156,6 +156,7 @@ proc ::server::OnRequest_initialize { msg } {
         return
     }
 
+    # FIXME : We just ignore what the client sends us ?
     set options(linesStartAt1) 1
     set options(columnsStartAt1) 1
     set options(pathFormat) path
