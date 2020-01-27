@@ -51,10 +51,6 @@ proc ::server::output { category msg args } {
     ]
 }
 
-proc ::server::bgerror { msg } {
-    ::server::output console $msg
-}
-
 proc ::server::handle { msg } {
     set type [dict get $msg type]
     switch -exact -- $type {
@@ -142,7 +138,7 @@ proc ::server::OnRequest_initialize { msg } {
 
     # Register the error handler for errors during instrumentation.
 
-    set instrument::errorHandler debugger::instrumentErrorHandler
+    set instrument::errorHandler ::server::instrumentErrorHandler
 
     # Initialize the debugger.
 
@@ -709,16 +705,6 @@ proc ::server::exitHandler { args } {
     ::connection::notify terminated [json::write object]
 }
 
-proc ::server::errorHandler { errMsg errStk errCode uncaught } {
-    variable handlingError
-    incr handlingError
-    ::connection::notify stopped [json::write object  \
-        reason      [json::write string "exception"] \
-        description [json::write string "Error: $errMsg"] \
-        threadId    1
-    ]
-}
-
 proc ::server::resultHandler { id code result errCode errInfo } {
     variable eval_requests
     variable evaluating
@@ -801,4 +787,42 @@ proc ::server::mapFileName { direction fileName } {
         }
     }
     return $fileName
+}
+
+proc ::server::bgerror { msg } {
+    ::server::output console $msg
+}
+
+proc ::server::errorHandler { errMsg errStk errCode uncaught } {
+    variable handlingError
+    incr handlingError
+    ::connection::notify stopped [json::write object  \
+        reason      [json::write string "exception"] \
+        description [json::write string "Error: $errMsg"] \
+        threadId    1
+    ]
+    ::server::output console "Uncaught error: $errMsg"
+    ::server::output console "  - errCode: $errCode"
+    ::server::output console "  - errStk: $errStk"
+    ::server::output console "  - uncaught: $uncaught"
+    ::server::output console "  - Issue 'step out' to ignore"
+
+}
+
+proc ::server::instrumentErrorHandler {loc} {
+    # See lib/tclgebugger/gui.tcl : instrumentErrorHandler
+
+    set errorMsg [lindex $::errorCode end]
+
+    ::dbg::Log error {Instrumentation errorCode: $::errorCode}
+
+    ::server::output console "Instrument ERROR:\
+                            \n$errorMsg\
+                          \n\nInstrumentation may be incomplete."
+
+    # TODO: We could actually throw a breakpoint here, vwait and intercept the
+    # continue call, but let's not.
+
+    # Ignore the error
+    return 1
 }
