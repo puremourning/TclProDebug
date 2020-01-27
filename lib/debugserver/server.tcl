@@ -643,7 +643,7 @@ proc ::server::OnRequest_next { msg } {
 }
 
 proc ::server::OnRequest_stepIn { msg } {
-    dbg::step in
+    dbg::step any
 
     ::connection::accept $msg
 }
