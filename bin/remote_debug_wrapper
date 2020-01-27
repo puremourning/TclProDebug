@@ -13,16 +13,22 @@ if { [info exists ::env(TCLPRO_DEBUG_PORT)] } {
     set port $::env(TCLPRO_DEBUG_PORT)
 }
 
+
+set script [lindex $argv 0]
+set argv [lrange $argv 1 end]
+set argv0 $script
+
+puts "Preparing to execute $argv0 with args $argv"
+
+puts "Using TCL interpreter: [info nameofexecutable]"
+puts "Using TCL version: [info tclversion], [info patchlevel]"
+puts "Using TCL library: [info library]"
+
 puts stderr "Listening for connections on $port"
 if { ! [debugger_init_accept $port] } {
     puts stderr "Unable to connect?"
     exit 1
 }
-
-
-set script [lindex $argv 0]
-set argv [lrange $argv 1 end]
-set argv0 $script
 
 puts "Ready? Let's go. Running $argv0 with $argv"
 
