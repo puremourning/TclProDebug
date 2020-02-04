@@ -163,12 +163,16 @@ proc ::server::OnRequest_initialize { msg } {
     set options(linesStartAt1) 1
     set options(columnsStartAt1) 1
     set options(pathFormat) path
-    set options(supportsRunInterminalRequest) 0
+    set options(supportsRunInterminalRequest) 1
 
     setState CONFIGURING
     ::connection::respond $msg [json::write object \
         supportsConfigurationDoneRequest true     \
     ]
+
+    if { $options(supportsRunInterminalRequest) } {
+        set ::dbg::appLaunchDelegate ::server::runInTerminal
+    }
 
     # We don't have anything more to do here. We will initialize the debugging
     # connection later on the launch request, so we just send the initialized
@@ -550,9 +554,33 @@ proc ::server::OnRequest_scopes { msg } {
             }
         }
 
-        # FIXME : We're not representing scopes well. they really are just hte
-        # tcl levels, but where there's a discontinuity in the stack (i.e. an
-        # uplevel, we need to make sure that lower-down stacks aren't displayed)
+        # The scopes are the TCL levels #0, #1... etc.
+        # The maximum TCL level we report is the _current_ level
+        # The name we give each scope is the lowest frame for that #level in the
+        # context stack. For example a trace with uplevels like (latest call at
+        # the top):
+        #
+        # 0   #1 proc XYZ
+        # 1  #0 source F2
+        # 2   #1 proc ABC
+        # 3    #2 proc DEF
+        # 4   #1 proc GHI
+        # 5  #0 source F1
+        # 6  #0 global
+        #
+        # With current frame 0:
+        #  The scopes are: #0, #1 (#2 is lower than current scope #1)
+        #  The names are:
+        #    #1: proc XYZ
+        #    #0: source F2
+        #
+        # With current frame 3:
+        #  The scopes are: #0, #1, #2
+        #  The names are:
+        #    #2: proc DEF
+        #    #1: proc GHI
+        #    #0: source F1
+        #
         if { $level <= $max_level } {
             if { ![info exists seen_levels($level)] } {
                 set seen_levels($level) $name
@@ -869,4 +897,35 @@ proc ::server::instrumentErrorHandler {loc} {
 
     # Ignore the error
     return 1
+}
+
+proc ::server::handleRunInterminalResponse { tempFile msg } {
+    ::dbg::Log info {RunInternalResponse $msg}
+}
+
+proc ::server::runInTerminal { command stdin } {
+    # When running in a terminal via the client, we can't write directly to the
+    # standard input, so instead we write a wrapper
+    set tempFile [exec mktemp]
+    set f [open $tempFile w]
+    puts $f "exec $command << {$stdin} >@stdout 2>@stderr"
+    puts $f "file delete $tempFile"
+    puts $f $stdin
+    close $f
+
+    set pipe [list [info nameofexecutable] $tempFile]
+
+    set args [list]
+    foreach arg $pipe {
+        lappend args [json::write string $arg]
+    }
+
+    ::connection::request                                                  \
+        runInTerminal                                                      \
+        [list ::server::handleRunInterminalResponse $tempFile]             \
+        [json::write object kind  [json::write string "integrated"]        \
+                            title [json::write string [lindex $command 0]] \
+                            cwd   [json::write string [pwd]]               \
+                            args  [json::write array {*}$args]]
+     
 }

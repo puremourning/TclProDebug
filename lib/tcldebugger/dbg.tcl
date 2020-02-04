@@ -109,7 +109,17 @@ namespace eval dbg {
 
     variable tempBreakpoint {}
 
+    # Delegate to map files for remote debugging. Should be an ensemble
+    # implementing a tolocal command
     variable fileMapper
+
+    # launch delegate --
+    #
+    #    appLaunchDelegate	a proc taking { command stdin } which will
+    #    launch application for local debugging. stdin is a string which should
+    #    be written to the stdin of the application
+    #
+    variable appLaunchDelegate
 }
 # end namespace dbg
 
@@ -163,6 +173,7 @@ proc dbg::start {application startDir script argList clientData} {
     variable appState
     variable libDir
     variable serverPort
+    variable appLaunchDelegate
 
     if {$appState != "dead"} {
 	error "dbg::start called with an app that is already started."
@@ -226,14 +237,17 @@ proc dbg::start {application startDir script argList clientData} {
 		}
 	    }
 
-            # TODO: Support runInTerminal by executing $application in a
-            # terminal e.g. /usr/bin/bash $appliction < $f.
 
             set _argv [list 127.0.0.1 $serverPort $script $clientData {*}$args]
             set _argc [llength $_argv]
             lappend _input variable argc $_argc argv $_argv
             set f [open [file join $libDir appLaunch.tcl]]
-            exec $application <<$_input\n[read $f] &
+
+            if { [info exists appLaunchDelegate] } {
+                eval $appLaunchDelegate {$application $_input\n[read $f]}
+            } else {
+                exec $application <<$_input\n[read $f] &
+            }
             puts stderr "Launched $application with $_input" 
             close $f
 	}

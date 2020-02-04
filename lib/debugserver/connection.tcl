@@ -45,7 +45,7 @@ proc ::connection::connect { handler } {
     set lastSequenceNumber_ 0
 }
 
-proc ::connection::request { request {arguments ""} handler } {
+proc ::connection::request { request handler { arguments "" } } {
     variable lastSequenceNumber_
     variable pendingRequests_
 
@@ -202,10 +202,13 @@ proc ::connection::_read_body { } {
     # use string operaitons, but the data is really in utf-8, with bytes)
     set msg [json::json2dict [encoding convertfrom utf-8 $payload]]
 
+    ::dbg::Log DAP {RX: $msg}
+
     if { [catch {
         if { [dict get $msg type] == "response" } {
             set seqNo [dict get $msg request_seq]
-            $pendingRequests_($seqNo) $msg
+            eval $pendingRequests_($seqNo) {$msg}
+            unset pendingRequests_($seqNo)
         } else {
             $handler_ $msg
         }
@@ -217,6 +220,7 @@ proc ::connection::_read_body { } {
 }
 
 proc ::connection::_write { msg } {
+    ::dbg::Log DAP {TX: $msg}
     puts -nonewline stdout "Content-Length: [string length $msg]\r\n"
     puts -nonewline stdout "\r\n"
     puts -nonewline stdout "$msg\r\n"
