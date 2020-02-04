@@ -119,7 +119,7 @@ namespace eval instrument {
 			    {ifneeded 	{parseSimpleArgs 2 3 \
 				    {parseWord parseWord parseBody}}}
 			} {parseCommand}}
-	proc	7.3	{parseSimpleArgs 3 3 {parseWord parseWord parseBody}}
+	proc	7.3	{parseProcCmd}
 	return	7.3	{parseReturnCmd}
 	switch	7.3	{parseSwitchCmd}
 	time	7.3	{parseSimpleArgs 1 2 {parseBody parseWord}}
@@ -1777,6 +1777,46 @@ proc instrument::parseReturnCmd {tokens index} {
 	set index [parseWord $tokens $index]
     }
     return $index
+}
+
+# instrument::parseProcCmd --
+#
+#	This routine wraps the proc command (optionally). It can be used by
+#	extensions to specify a list of procs which should not be intrumented.
+#
+#	This is useful where (for example) you have "infrastructure" procs that
+#	implement control flow (such as ForEach, WithXYZ or whatever) where you
+#	really don't want to step into the implementation of that proc, but the
+#	body that's passed to it.
+#
+#	example, for a WithTimeout 10 { ... }:
+#
+#	instrument::addCommand proc {parseProcCmd {WithTimeout}}
+#	instrument::addCommand WithTimeout {parseSimpleArgs 2 2 {
+#	        parseWord parseBody} }
+#
+#
+# Arguments:
+#	noInstrumentProcs List of proc names to skip instrumentation for
+#	tokens		The parse tokens for the command.
+#	index		The index of the next word to be parsed.
+#
+# Results:
+#	Returns the index of the next token to be parsed.
+
+proc instrument::parseProcCmd { noInstrumentProcs tokens index } {
+    set argc [llength $tokens]
+
+    if { $argc == 4 &&
+         [getLiteral [lindex $tokens $index] text] &&
+         $text in $noInstrumentProcs } {
+
+        return [parseSimpleArgs 3 3 {parseWord parseWord parseWord}\
+                                $tokens $index]
+    }
+
+    return [parseSimpleArgs 3 3 {parseWord parseWord parseBody}\
+                            $tokens $index]
 }
 
 # instrument::parseIfCmd --
