@@ -430,19 +430,32 @@ proc ::server::OnRequest_stackTrace { msg } {
         ::dbg::Log message {frame: $tcl_frame ($index);}
         ::dbg::Log message {level/loc/type/args: $level $loc $type $args}
 
+        set name ""
+        for { set i 0 } { $i < $level } { incr i } {
+            append name " "
+        }
+        append name " #$level: "
+
         switch -exact -- $type {
-            "global" {
-                set name $type
-            }
             "proc" {
-                set name "proc [lindex $args 0]"
+                # Args: procName procArg0 ... procArgN
+                append name "$type [lindex $args 0]"
             }
             "source" {
-                set name "source"
+                # this is actually usually a global command
+                append name "::"
+            }
+            "uplevel" {
+                # don't put a name
+            }
+            "global" {
+                # skp this one, it's probably the command line ? not sure
+                append name "::"
+            }
+            default {
+                append name $type
             }
         }
-
-        append name "<$level>"
 
         if { $loc == {} } {
             # we don't know the source yet ?
@@ -523,31 +536,35 @@ proc ::server::OnRequest_scopes { msg } {
         set args [lrange $tcl_frame 3 end]
 
         switch -exact -- $type {
-            "global" {
-                set name $type
-            }
             "proc" {
                 set name "proc [lindex $args 0]"
             }
             "source" {
-                set name "source"
+                set name "source [lindex $args 0]"
+            }
+            "uplevel" {
+                continue
+            }
+            default {
+                set name $type
             }
         }
 
+        # FIXME : We're not representing scopes well. they really are just hte
+        # tcl levels, but where there's a discontinuity in the stack (i.e. an
+        # uplevel, we need to make sure that lower-down stacks aren't displayed)
         if { $level <= $max_level } {
-            if { [info exists seen_levels($level)] } {
-                lappend seen_levels($level) $name
-            } else {
-                set seen_levels($level) [list $name]
+            if { ![info exists seen_levels($level)] } {
+                set seen_levels($level) $name
             }
         }
 
     }
     foreach level [lsort -decreasing [array names seen_levels]] {
-        lappend scopes [json::write object                           \
-            name  [json::write string [join $seen_levels($level) ,]] \
-            variablesReference  [expr { $level + 1 }]                \
-            expensive true                                           \
+        lappend scopes [json::write object                             \
+            name  [json::write string "#$level: $seen_levels($level)"] \
+            variablesReference  [expr { $level + 1 }]                  \
+            expensive true                                             \
         ]
     }
 
