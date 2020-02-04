@@ -145,7 +145,9 @@ proc ::server::OnRequest_initialize { msg } {
 
     dbg::initialize $libdir_
 
-    if { "-quiet" in $::argv } {
+    if { "-verbose" in $::argv } {
+        set ::dbg::debug 1
+    } else {
         set ::dbg::debug 0
     }
 
