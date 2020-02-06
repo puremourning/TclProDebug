@@ -1,0 +1,136 @@
+{
+  "name": "tclpro-debug",
+  "displayName": "TCL Debugger",
+  "version": "%VERSION%",
+  "publisher": "puremourning",
+  "description": "Debug adapter for local and remote TCL debugging using TclProDebug.",
+  "author": {
+    "name": "Ben Jackson",
+    "email": "puremourning@gmail.com"
+  },
+  "license": "license.terms",
+  "keywords": [],
+  "engines": {
+    "vscode": "^1.18.0",
+    "node": "^7.9.0"
+  },
+  "icon": "",
+  "categories": [
+    "Debuggers"
+  ],
+  "private": true,
+  "devDependencies": {},
+  "contributes": {
+    "breakpoints": [
+      { "language": "tcl" },
+      { "language": "expect" },
+      { "language": "incrtcl" },
+      { "language": "otcl" }
+    ],
+    "debuggers": [
+      {
+        "type": "tclpro",
+        "label": "TCLPro Debugger",
+        "runtime": "tclsh",
+        "program": "./bin/debugadapter",
+        "languages": [ "tcl", "expect", "incrtcl", "otcl" ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "tclsh",
+              "target",
+              "cwd",
+              "args"
+            ],
+            "properties": {
+              "tclsh": {
+                "type": "string",
+                "description": "Path to the tclsh to use to start 'target'",
+                "default": "tclsh"
+              },
+              "target": {
+                "type": "string",
+                "description": "Path to the script to debug."
+              },
+              "args": {
+                "type": "array",
+                "description": "Program arguments.",
+                "default": []
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Program working directory.",
+                "default": "${workspaceRoot}"
+              },
+              "pauseOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": false
+              },
+              "extensionDirs": {
+                "type": "array",
+                "description": "List of directories to find extensions (*.pdx)",
+                "default": []
+              },
+              "tolocal": {
+                "type": "array",
+                "description": "List of mappings of remote paths to local paths, defined as the arguments to TCL's regsub",
+                "items": {
+                  "type": "object",
+                  "description": "Keys are regular expressions as passed to regsub, values are replacements as passed to regsub"
+                }
+              }
+            }
+          },
+          "attach": {
+            "required": [
+              "host",
+              "port"
+            ],
+            "properties": {
+              "host": {
+                "type": "string",
+                "description": "The hostname where the remote debugger is running"
+              },
+              "port": {
+                "type": "integer",
+                "description": "The port that the remote debugger is listening on",
+                "default": 2345
+              },
+              "pauseOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": false
+              },
+              "extensionDirs": {
+                "type": "array",
+                "description": "List of directories to find extensions (*.pdx)",
+                "default": []
+              },
+              "tolocal": {
+                "type": "array",
+                "description": "List of mappings of remote paths to local paths, defined as the arguments to TCL's regsub",
+                "items": {
+                  "type": "object",
+                  "description": "Keys are regular expressions as passed to regsub, values are replacements as passed to regsub"
+                }
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "tclpro",
+            "request": "launch",
+            "name": "Debug",
+            "tclsh": "tclsh",
+            "target": "${file}",
+            "args": [],
+            "cwd": "${workspaceRoot}"
+          }
+        ],
+        "configurationSnippets": []
+      }
+    ]
+  }
+}

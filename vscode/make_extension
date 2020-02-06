@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+set -e
+set -v
+set -o pipefail
+
+# When --dev is the first argument, create symlinks rather than copies
+if [ "$1" == "--dev" ]; then
+    # This shouold be the latest version
+    VERSION=999.999.999
+    CP_R="ln -s"
+    CP="ln -s"
+else
+    VERSION=$1
+    CP_R="cp -r"
+    CP="cp"
+fi
+shift
+
+
+VSCODE=$(pwd)
+ROOT=${VSCODE}/..
+PACKAGE=puremourning.tclpro-debug-${VERSION}
+EXTENSION=${VSCODE}/extension/${PACKAGE}
+
+if [ -d ${EXTENSION} ]; then
+    rm -rf ${EXTENSION}
+fi
+
+mkdir -p ${EXTENSION}
+pushd ${EXTENSION}
+  for d in bin             \
+           lib/cmdline     \
+           lib/debugserver \
+           lib/projectInfo \
+           lib/remotedebug \
+           lib/tcldebugger \
+           vendor          \
+           src;
+  do
+    mkdir -p $(dirname $d)
+    ${CP_R} ${ROOT}/$d $d
+  done
+
+  mkdir -p lib/tclparser
+  ${CP} ${ROOT}/lib/tclparser/libtclparser*.so lib/tclparser
+  ${CP} ${ROOT}/lib/tclparser/pkgIndex.tcl     lib/tclparser
+
+  ${CP} ${ROOT}/debug_server_main.tcl          .
+  ${CP} ${VSCODE}/package.json                 .
+  sed -i "s/%VERSION%/${VERSION}/" package.json
+popd
+
+pushd ${VSCODE}/extension
+  tar zcvf ${PACKAGE}.tar.gz ${PACKAGE}
+popd
+

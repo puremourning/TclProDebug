@@ -14,8 +14,8 @@ package require parser
 #   port (int)    IPv4 port     (e.g. 2345, as supplied to remote_debug_wrapper)
 #
 # Both:
-#   tolocal (mapping): defines regsubs which map remote file names to local
-#   filenames when remote debugging 
+#   tolocal (list of mappings): defines regsubs which map remote file names to
+#   local filenames when remote debugging 
 #     keys: the keys are regular expression matches 
 #     values: regular expression replacement strings
 #        (as in [regsub $key $filename $value])
