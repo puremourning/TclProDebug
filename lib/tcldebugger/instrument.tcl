@@ -119,7 +119,7 @@ namespace eval instrument {
 			    {ifneeded 	{parseSimpleArgs 2 3 \
 				    {parseWord parseWord parseBody}}}
 			} {parseCommand}}
-	proc	7.3	{parseProcCmd}
+	proc	7.3	{parseSimpleArgs 3 3 {parseWord parseWord parseBody}}
 	return	7.3	{parseReturnCmd}
 	switch	7.3	{parseSwitchCmd}
 	time	7.3	{parseSimpleArgs 1 2 {parseBody parseWord}}
