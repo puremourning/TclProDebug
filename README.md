@@ -2,7 +2,7 @@ The TclPro Debugger version 3.0 is an upgrade of of the debugger included in the
 TclPro product version 1.5 released and open-sourced by Scriptics Corporation.
 
 Notably, this fork of TclProDebug provides a [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
-implementeation allowing it to be used by any client implementing that protocol,
+implementation allowing it to be used by any client implementing that protocol,
 including: 
 
 - [Vimspector](https://github.com/puremourning/vimspector)
