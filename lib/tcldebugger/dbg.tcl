@@ -853,13 +853,13 @@ proc dbg::getResult {maxlen} {
 # Results:
 #	Returns a breakpoint identifier.
 
-proc dbg::addLineBreakpoint {location} {
+proc dbg::addLineBreakpoint {location {test {}}} {
     variable appState
     
     if {$appState != "dead"} {
-	SendAsync DbgNub_AddBreakpoint line $location
+	SendAsync DbgNub_AddBreakpoint line $location $test
     }
-    return [break::MakeBreakpoint line $location]
+    return [break::MakeBreakpoint line $location $test]
 }
 
 # dbg::getLineBreakpoints --
@@ -1066,6 +1066,7 @@ proc dbg::moveLineBreakpoint {breakpoint newLoc} {
     variable appState
     
     set removedBpState [break::getState $breakpoint]
+    set removedBpTest [break::getTest $breakpoint]
     dbg::removeBreakpoint $breakpoint
 
     # If there's already a bpt on "line"
@@ -1088,7 +1089,7 @@ proc dbg::moveLineBreakpoint {breakpoint newLoc} {
 	    dbg::removeBreakpoint $priorBpt	    
 	}
     }
-    return [dbg::addLineBreakpoint $newLoc]
+    return [dbg::addLineBreakpoint $newLoc $removedBpTest]
 }
 
 # dbg::disableBreakpoint --

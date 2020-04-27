@@ -168,6 +168,7 @@ proc ::server::OnRequest_initialize { msg } {
     setState CONFIGURING
     ::connection::respond $msg [json::write object \
         supportsConfigurationDoneRequest true     \
+        supportsConditionalBreakpionts   true
     ]
 
     if { $options(supportsRunInterminalRequest) } {
@@ -208,17 +209,26 @@ proc ::server::OnRequest_setBreakpoints { msg } {
     if { [dict exists $msg arguments breakpoints] } {
         foreach breakpoint [dict get $msg arguments breakpoints] {
             set line [dict get $breakpoint line]
+            set test [expr {
+                [dict exists $breakpoint condition]
+                    ? [dict get $breakpoint condition]
+                    : {}
+            }]
             set location [loc::makeLocation $block $line]
-            ::dbg::Log debug {Adding bp at $file:$line: $location}
-            dbg::addLineBreakpoint $location
+            ::dbg::Log debug {Adding bp at $file:$line: $location ($test)}
+            dbg::addLineBreakpoint $location $test
         }
     }
+
+    # TODO: Don't do this here, do it post-instrumentation (return nothing here
+    # until we know about it - get the dbg.tcl to tell us)
 
     set breakpoints [list]
     foreach bp [dbg::getLineBreakpoints] {
         set loc [break::getLocation $bp]
         set block [loc::getBlock $loc]
-        ::dbg::Log debug {Checking return bp $bp against $file vs [blk::getFile $block]}
+        ::dbg::Log debug \
+            {Checking return bp $bp against $file vs [blk::getFile $block]}
         if { [blk::getFile $block] == $file } {
             ::dbg::Log debug {Returning bp $bp}
             lappend breakpoints [json::write object                            \
@@ -250,6 +260,7 @@ proc ::server::OnRequest_setFunctionBreakpoints { msg } {
     }
 
     # TODO
+
     ::connection::respond $msg [json::write object \
         breakpoints [json::write array]            \
     ]
