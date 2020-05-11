@@ -599,12 +599,16 @@ proc ::server::OnRequest_scopes { msg } {
         }
 
     }
+    # The first scope is the current scope, so make it "not expensive" so that
+    # it is always expanded. The others, less so.
+    set expensive false
     foreach level [lsort -decreasing [array names seen_levels]] {
         lappend scopes [json::write object                             \
             name  [json::write string "#$level: $seen_levels($level)"] \
             variablesReference  [expr { $level + 1 }]                  \
-            expensive true                                             \
+            expensive $expensive                                       \
         ]
+        set expensive true
     }
 
     ::connection::respond $msg [json::write object \
