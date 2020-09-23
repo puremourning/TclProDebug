@@ -55,7 +55,8 @@ proc debugger_init {{host 127.0.0.1} {port 2576} {server 0}} {
 
     if { $server } {
         global debugger_accepted
-        if {[catch {set socket [socket -server debugger_accept $port]}] != 0} {
+        if {[catch {set socket [socket -server debugger_accept $port]} err] != 0} {
+            puts stderr "Unable to listen on socket: $err"
             return 0
         }
         vwait debugger_accepted
