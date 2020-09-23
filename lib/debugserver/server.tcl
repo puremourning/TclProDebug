@@ -33,8 +33,12 @@ namespace eval ::server {
     variable handlingError 0
     variable eval_requests [list]
     variable evaluating [list]
+    variable eval_variables [list]
+    variable eval_var_base 9999
 
     variable onNewState
+
+    array set TYPES {a array s scalar l list d dict}
 }
 
 proc ::server::start { libdir } {
@@ -616,45 +620,111 @@ proc ::server::OnRequest_scopes { msg } {
     ]
 }
 
+proc ::server::_MakeVariableReference { type value } {
+    set variablesReference [expr { 
+        [llength $::server::eval_variables] + $::server::eval_var_base
+    }]
+    lappend ::server::eval_variables [dict create type $type value $value]
+    return $variablesReference
+}
+
+proc ::server::_GetVariableReference { variablesReference } {
+    set varIdx [expr { $variablesReference - $::server::eval_var_base } ]
+    return [lindex $::server::eval_variables $varIdx]
+}
+
 proc ::server::OnRequest_variables { msg } {
     variable state
+    variable TYPES
+
     if { $state ne "DEBUGGING" } {
         ::connection::reject $msg \
-                             "Invalid event 'scopes' in state $state"
+                             "Invalid event 'variables' in state $state"
         return
     }
 
-    set level [expr { [dict get $msg arguments variablesReference] - 1 }]
+    set variablesReference [dict get $msg arguments variablesReference]
 
     set variables [list]
-    set varList [dbg::getVariables $level]
-    dbg::Log message {Var list: $varList}
-    set varNames [list]
-    foreach var $varList {
-        lappend varNames [lindex $var 0]
-    }
-    set vars [dbg::getVar $level 20 $varNames]
-    dbg::Log message {Vars: $vars}
+    if { $variablesReference < $::server::eval_var_base } {
+        set level [expr { $variablesReference - 1 }]
+
+        set varList [dbg::getVariables $level]
+        dbg::Log message {Var list: $varList}
+        set varNames [list]
+        foreach var $varList {
+            lappend varNames [lindex $var 0]
+        }
+        set vars [dbg::getVar $level -1 $varNames]
+        dbg::Log message {Vars: $vars}
 
 
-    array set TYPES {a Array s Scalar n Unknown}
+        foreach tcl_var $vars {
+            lassign $tcl_var name type value
+            set variablesReference 0
+            if { $type == "a" } {
+                set variablesReference [_MakeVariableReference array $value]
+                set value "array: [llength [dict keys $value]] elements"
+            } else {
+                set variablesReference [_MakeVariableReference scalar $value]
+                if { [string length $value] > 20 } {
+                    set value "[string range $value 0 20]..."
+                }
+            }
+            set value [string map {\n \\n} $value]
+            lappend variables [json::write object       \
+                name [json::write string $name]         \
+                value [json::write string $value]       \
+                type [json::write string $TYPES($type)] \
+                variablesReference $variablesReference]
+        }
+    } else {
+        set eval_var [_GetVariableReference $variablesReference]
+        set value [dict get $eval_var value]
+        switch [dict get $eval_var type] {
+            "list" {
+                set index 0
+                foreach element $value {
+                    lappend variables [json::write object   \
+                        name [json::write string $index]    \
+                        value [json::write string $element] \
+                        type [json::write string $TYPES(s)]    \
+                        variablesReference 0]
+                    incr index
+                }
+            }
 
-    foreach tcl_var $vars {
-        lassign $tcl_var name type value
-        # TODO: We should make arrays expandable. The "value" here would be a
-        # list of name/value pairs. We might be able to interpret lists and
-        # dicts but i think the only type info we get is:
-        #  s - scalar
-        #  n - ???
-        #  a - array
-        #
-        # TODO: if the value is truncated, make it expandable ?
-        lappend variables [json::write object \
-            name [json::write string $name]   \
-            value [json::write string $value] \
-            type [json::write string $TYPES($type)]    \
-            variablesReference 0              \
-        ]
+            "dict" - "array" {
+                dict for { k v } $value {
+                    lappend variables [json::write object \
+                        name [json::write string $k]    \
+                        value [json::write string $v] \
+                        type [json::write string $TYPES(s)]  \
+                        variablesReference 0]
+                }
+            }
+
+            "scalar" {
+                # As a scalar
+                lappend variables [json::write object   \
+                    name [json::write string "Value"]   \
+                    value [json::write string $value]   \
+                    type [json::write string $TYPES(s)] \
+                    variablesReference 0]
+                # As a list
+                lappend variables [json::write object                        \
+                    name [json::write string "As list..."]                   \
+                    value [json::write string ""]                            \
+                    type [json::write string $TYPES(l)]                      \
+                    variablesReference [_MakeVariableReference list $value]]
+                # As a dict
+                lappend variables [json::write object                        \
+                    name [json::write string "As dict..."]                   \
+                    value [json::write string ""]                            \
+                    type [json::write string $TYPES(d)]                      \
+                    variablesReference [_MakeVariableReference dict $value]]
+            }
+        }
     }
 
     ::connection::respond $msg [json::write object \
@@ -683,9 +753,35 @@ proc ::server::_DoEvaluate { msg } {
 
     set expression [dict get $msg arguments expression]
     set context "watch"
+    set fmt "scalar"
     catch { set context [dict get $msg arguments context] }
-    if { $context == "hover" } {
-        set expression "set $expression"
+
+    switch -- $context {
+        "watch" {
+            if { [string match {*,l} $expression] } {
+                set expression [string range $expression 0 end-2]
+                set fmt list
+            } elseif { [string match {*,d} $expression] } {
+                set expression [string range $expression 0 end-2]
+                set fmt dict
+            } elseif { [string match {*,s} $expression] } {
+                # scalar is the default, this is required in case some funky
+                # expression actually ends ',s'
+                set expression [string range $expression 0 end-2]
+            }
+        }
+
+        "repl" {
+            # just use what the user sent
+        }
+
+        "hover" {
+            if { [string match {$*} $expression] } {
+                # Let's see if it's a variable
+                set expression "set $expression"
+            }
+        }
+
     }
 
     set stack [list]
@@ -694,7 +790,69 @@ proc ::server::_DoEvaluate { msg } {
     # level loc type args...
     set level [lindex [lindex $stack $index] 0]
 
-    set evaluating [list [::dbg::evaluate $level $expression] $msg]
+    set evaluating [list [::dbg::evaluate $level $expression] \
+                         $msg \
+                         $expression \
+                         $fmt]
+}
+
+
+proc ::server::resultHandler { id code result errCode errInfo } {
+    variable eval_requests
+    variable evaluating
+    variable eval_variables
+
+    if { [llength $evaluating] ==  0 || [lindex $evaluating 0] ne $id } {
+        ::dbg::Log error {Unexpected response to request with id $id ($result)}
+    } else {
+        lassign $evaluating id msg expression fmt
+        set evaluating [list]
+        set variablesReference 0
+
+        switch -- $fmt {
+            "scalar" {
+                set eval_result $result
+                set variablesReference [_MakeVariableReference scalar $result]
+                if { [string length $eval_result] > 20 } {
+                    set eval_result "[string range $eval_result 0 20]..."
+                }
+            }
+            "list" {
+                if { ![string is list $result] } {
+                    set eval_result $result
+                } else {
+                    set variablesReference [_MakeVariableReference list $result]
+                    set eval_result "list: [llength $result] items"
+                }
+            }
+            "dict" {
+                if { ![string is list $result] } {
+                    set eval_result $result
+                } elseif { [catch {
+                    set eval_result \
+                        "dict: [llength [dict keys $result]] keys"
+                    set variablesReference \
+                        [_MakeVariableReference dict $result]
+                } err] } {
+                    # It's probably not a valid dict
+                    set eval_result $result
+                    set variablesReference 0
+                }
+            }
+        }
+        set eval_result [string map {\n \\n} $eval_result]
+        ::connection::respond $msg [json::write object \
+            result [::json::write string $eval_result] \
+            variablesReference $variablesReference     \
+        ]
+    }
+
+    if { [llength $eval_requests] > 0 } {
+        set msg [lindex $eval_requests 0]
+        set eval_requests [lrange $eval_requests 1 end]
+
+        ::server::_DoEvaluate $msg
+    }
 }
 
 proc ::server::OnRequest_disconnect { msg } {
@@ -751,6 +909,7 @@ proc ::server::OnRequest_stepOut { msg } {
 proc ::server::linebreakHandler { args } {
     puts stderr "Line break: $args"
 
+    set ::server::eval_variables [list]
     ::connection::notify stopped [json::write object  \
         reason      [json::write string "breakpoint"] \
         description [json::write string "Line break"] \
@@ -761,6 +920,7 @@ proc ::server::linebreakHandler { args } {
 proc ::server::varbreakHandler { args } {
     puts stderr "Var break: $args"
 
+    set ::server::eval_variables [list]
     ::connection::notify stopped [json::write object  \
         reason      [json::write string "breakpoint"] \
         description [json::write string "Var break"] \
@@ -771,6 +931,7 @@ proc ::server::varbreakHandler { args } {
 proc ::server::userbreakHandler { args } {
     puts stderr "User break: $args"
 
+    set ::server::eval_variables [list]
     ::connection::notify stopped [json::write object  \
         reason      [json::write string "breakpoint"] \
         description [json::write string "User break"] \
@@ -790,29 +951,6 @@ proc ::server::exitHandler { args } {
         exitCode 0                                  \
     ]
     ::connection::notify terminated [json::write object]
-}
-
-proc ::server::resultHandler { id code result errCode errInfo } {
-    variable eval_requests
-    variable evaluating
-
-    if { [llength $evaluating] ==  0 || [lindex $evaluating 0] ne $id } {
-        ::dbg::Log error {Unexpected response to request with id $id ($result)}
-    } else {
-        set msg [lindex $evaluating 1]
-        set evaluating [list]
-        ::connection::respond $msg [json::write object \
-            result [::json::write string $result]      \
-            variablesReference 0                       \
-        ]
-    }
-
-    if { [llength $eval_requests] > 0 } {
-        set msg [lindex $eval_requests 0]
-        set eval_requests [lrange $eval_requests 1 end]
-
-        ::server::_DoEvaluate $msg
-    }
 }
 
 proc ::server::attachHandler { request } {
@@ -883,6 +1021,7 @@ proc ::server::bgerror { msg } {
 proc ::server::errorHandler { errMsg errStk errCode uncaught } {
     variable handlingError
     incr handlingError
+    set ::server::eval_variables [list]
     ::connection::notify stopped [json::write object  \
         reason      [json::write string "exception"] \
         description [json::write string "Error: $errMsg"] \
