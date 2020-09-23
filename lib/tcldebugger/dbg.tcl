@@ -11,17 +11,25 @@ package require parser
 
 namespace eval dbg {
 
+    array set LOGLEVEL {
+        error   0
+        warning 1
+        info    2
+        message 2
+        debug   3
+        DAP     4
+        timing  5
+        nub     5
+    }
+
     # debugging options --
     #
     # Fields:
-    #   debug		Set to 1 to enable debugging output.
+    #   logLevl		Max level to output
     #	logFile		File handle where logging messages should be written.
-    #	logFilter	List of message types to include in debugging, or empty
-    #	                list for all.
 
-    variable debug 1
+    variable logLevel $LOGLEVEL(info)
     variable logFile stderr
-    variable logFilter [list]
 
     # startup options --
     #
@@ -1690,13 +1698,12 @@ proc dbg::Instrument {file script} {
 #	None.
 
 proc dbg::Log {type message} {
-    variable logFilter
-    variable debug
+    variable logLevel
 
-    if {!$debug || ( [llength $logFilter] > 0 && 
-                     [lsearch -exact $logFilter $type] == -1 ) } {
-	return
+    if { $::dbg::LOGLEVEL($type) > $logLevel } {
+        return
     }
+
     puts $::dbg::logFile "LOG($type,[clock clicks]): [uplevel 1 [list subst $message]]"
     update idletasks
     return

@@ -146,9 +146,9 @@ proc ::server::OnRequest_initialize { msg } {
     dbg::initialize $libdir_
 
     if { "-verbose" in $::argv } {
-        set ::dbg::debug 1
+        set ::dbg::logLevel ::dbg::LOGLEVEL(debug)
     } else {
-        set ::dbg::debug 0
+        set ::dbg::logLevel ::dbg::LOGLEVEL(info)
     }
 
     # read client capabilities/options
