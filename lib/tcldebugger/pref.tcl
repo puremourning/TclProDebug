@@ -464,7 +464,6 @@ proc pref::prefNew {group pref value update} {
 #	does not exist, then an error is generated.
 
 proc pref::prefGet {pref {group {}}} {
-  puts stderr "prefGet: $pref"
     set group [pref::PrefLocateGroup $pref $group]
     if {$group == {}} {
 	error "pref \"$pref\" does not exist."

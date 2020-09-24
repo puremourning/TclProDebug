@@ -62,7 +62,7 @@ proc ::server::handle { msg } {
         "request" {
             set p "OnRequest_[dict get $msg command]"
             if { $p ni [info procs] } {
-                puts stderr "WARNING: Rejecting unhandled request: $type"
+                ::dbg::Log warning "WARNING: Rejecting unhandled request: $type"
                 ::connection::reject \
                     $msg \
                     "Unrecognised request: [dict get $msg command]"
@@ -83,7 +83,7 @@ proc ::server::handle { msg } {
             set p "OnEvent_[dict get $msg event]"
 
             if { $p ni [info procs] } {
-                puts stderr "WARNING: Ignoring unhandled event: $type"
+                ::dbg::Log warning "WARNING: Ignoring unhandled event: $type"
             } else {
                 $p $msg
             }
@@ -150,9 +150,9 @@ proc ::server::OnRequest_initialize { msg } {
     dbg::initialize $libdir_
 
     if { "-verbose" in $::argv } {
-        set ::dbg::logLevel ::dbg::LOGLEVEL(debug)
+        set ::dbg::logLevel debug
     } else {
-        set ::dbg::logLevel ::dbg::LOGLEVEL(info)
+        set ::dbg::logLevel info
     }
 
     # read client capabilities/options
@@ -907,8 +907,6 @@ proc ::server::OnRequest_stepOut { msg } {
 }
     
 proc ::server::linebreakHandler { args } {
-    puts stderr "Line break: $args"
-
     set ::server::eval_variables [list]
     ::connection::notify stopped [json::write object  \
         reason      [json::write string "breakpoint"] \
@@ -918,8 +916,6 @@ proc ::server::linebreakHandler { args } {
 }
 
 proc ::server::varbreakHandler { args } {
-    puts stderr "Var break: $args"
-
     set ::server::eval_variables [list]
     ::connection::notify stopped [json::write object  \
         reason      [json::write string "breakpoint"] \
@@ -929,8 +925,6 @@ proc ::server::varbreakHandler { args } {
 }
 
 proc ::server::userbreakHandler { args } {
-    puts stderr "User break: $args"
-
     set ::server::eval_variables [list]
     ::connection::notify stopped [json::write object  \
         reason      [json::write string "breakpoint"] \
@@ -940,11 +934,11 @@ proc ::server::userbreakHandler { args } {
 }
 
 proc ::server::cmdresultHandler { args } {
-    puts stderr "Command result: $args"
+    ::dbg::Log debug "Command result: $args"
 }
 
 proc ::server::exitHandler { args } {
-    puts stderr "Exit: $args"
+    ::dbg::Log info "Exit: $args"
 
     #TODO: We don't get the exitCode from the debugger ?
     ::connection::notify exited [json::write object \
@@ -957,7 +951,7 @@ proc ::server::attachHandler { request } {
     variable state
     variable attachRequest
     setState DEBUGGING
-    puts stderr "The debugger attached!"
+    ::dbg::Log info "The debugger attached!"
 
     if { $request == "REMOTE" } {
         set request $attachRequest

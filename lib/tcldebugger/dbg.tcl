@@ -15,20 +15,20 @@ namespace eval dbg {
         error   0
         warning 1
         info    2
-        message 2
         debug   3
         DAP     4
         timing  5
         nub     5
+        message 5
     }
 
     # debugging options --
     #
     # Fields:
-    #   logLevl		Max level to output
+    #   logLevel	Max level to output
     #	logFile		File handle where logging messages should be written.
 
-    variable logLevel $LOGLEVEL(info)
+    variable logLevel info
     variable logFile stderr
 
     # startup options --
@@ -256,7 +256,7 @@ proc dbg::start {application startDir script argList clientData} {
             } else {
                 exec $application <<$_input\n[read $f] &
             }
-            puts stderr "Launched $application with $_input" 
+            ::dbg::Log debug "Launched $application with $_input" 
             close $f
 	}
     } msg]} {
@@ -1700,7 +1700,7 @@ proc dbg::Instrument {file script} {
 proc dbg::Log {type message} {
     variable logLevel
 
-    if { $::dbg::LOGLEVEL($type) > $logLevel } {
+    if { $::dbg::LOGLEVEL($type) > $::dbg::LOGLEVEL($logLevel) } {
         return
     }
 

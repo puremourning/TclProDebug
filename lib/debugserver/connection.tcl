@@ -123,7 +123,7 @@ proc ::connection::_read { } {
     set data [read stdin]
 
     if { [eof stdin] } {
-        puts stderr "The input channel was closed."
+        ::dbg::Log info "The input channel was closed."
         set ::APP_STATE dead
         return
     }
@@ -213,7 +213,7 @@ proc ::connection::_read_body { } {
             $handler_ $msg
         }
     } err] } {
-        puts stderr "Exception handling message: $::errorInfo"
+        ::dbg::Log error "Exception handling message: $::errorInfo"
     }
 
     set readState_ "READ_HEADER"
