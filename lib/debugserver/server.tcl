@@ -769,19 +769,33 @@ proc ::server::_DoEvaluate { msg } {
                 # expression actually ends ',s'
                 set expression [string range $expression 0 end-2]
             }
-        }
 
-        "repl" {
-            # just use what the user sent
-        }
-
-        "hover" {
-            if { [string match {$*} $expression] } {
-                # Let's see if it's a variable
-                set expression "set $expression"
+            if { [string is list $expression] && 
+                 [llength $expression] == 1 } {
+                # Check for just '$value' and convert to expr { $value }
+                if { [string match {$*} $expression] } {
+                    set expression "expr { $expression }"
+                }
             }
         }
 
+        "repl" {
+            # Just use what they sent as a tcl command
+        }
+
+        "hover" {
+            # we'll try and make a valid expression later
+            if { [string is list $expression] && 
+                 [llength $expression] == 1 } {
+                # Check for just '$value' and convert to expr { $value }
+                # Check for just 'value' and convert to set value
+                if { [string match {$*} $expression] } {
+                    set expression "expr { $expression }"
+                } else {
+                    set expression "set $expression"
+                }
+            }
+        }
     }
 
     set stack [list]
