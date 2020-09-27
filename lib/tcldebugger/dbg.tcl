@@ -925,7 +925,7 @@ proc dbg::validateBreakpoints {file blk} {
     }
 
     if {$warning && [pref::prefGet warnInvalidBp]} {
-	Log "Warning" {invalid breakpoints found in $file have been moved to valid lines.}
+	Log warning {invalid breakpoints found in $file have been moved to valid lines.}
     }
     return
 }
