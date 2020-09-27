@@ -714,12 +714,14 @@ proc ::server::OnRequest_variables { msg } {
                     type [json::write string $TYPES(s)] \
                     variablesReference 0]
                 if { [string is list $value] } {
-                  # As a list
-                  lappend variables [json::write object                        \
-                      name [json::write string "As list..."]                   \
-                      value [json::write string ""]                            \
-                      type [json::write string $TYPES(l)]                      \
-                      variablesReference [_MakeVariableReference list $value]]
+                  if { [llength $value] > 1 } {
+                    # As a list
+                    lappend variables [json::write object                      \
+                        name [json::write string "As list..."]                 \
+                        value [json::write string ""]                          \
+                        type [json::write string $TYPES(l)]                    \
+                        variablesReference [_MakeVariableReference list $value]]
+                  }
                   if { [llength $value] % 2 == 0 } {
                     # As a dict
                     lappend variables [json::write object                      \
