@@ -689,7 +689,8 @@ proc ::server::OnRequest_variables { msg } {
                         name [json::write string $index]    \
                         value [json::write string $element] \
                         type [json::write string $TYPES(s)]    \
-                        variablesReference 0]
+                        variablesReference \
+                          [_MakeVariableReference scalar $element]]
                     incr index
                 }
             }
@@ -700,7 +701,8 @@ proc ::server::OnRequest_variables { msg } {
                         name [json::write string $k]    \
                         value [json::write string $v] \
                         type [json::write string $TYPES(s)]  \
-                        variablesReference 0]
+                        variablesReference \
+                          [_MakeVariableReference scalar $v]]
                 }
             }
 
@@ -711,18 +713,22 @@ proc ::server::OnRequest_variables { msg } {
                     value [json::write string $value]   \
                     type [json::write string $TYPES(s)] \
                     variablesReference 0]
-                # As a list
-                lappend variables [json::write object                        \
-                    name [json::write string "As list..."]                   \
-                    value [json::write string ""]                            \
-                    type [json::write string $TYPES(l)]                      \
-                    variablesReference [_MakeVariableReference list $value]]
-                # As a dict
-                lappend variables [json::write object                        \
-                    name [json::write string "As dict..."]                   \
-                    value [json::write string ""]                            \
-                    type [json::write string $TYPES(d)]                      \
-                    variablesReference [_MakeVariableReference dict $value]]
+                if { [string is list $value] } {
+                  # As a list
+                  lappend variables [json::write object                        \
+                      name [json::write string "As list..."]                   \
+                      value [json::write string ""]                            \
+                      type [json::write string $TYPES(l)]                      \
+                      variablesReference [_MakeVariableReference list $value]]
+                  if { [llength $value] % 2 == 0 } {
+                    # As a dict
+                    lappend variables [json::write object                      \
+                        name [json::write string "As dict..."]                 \
+                        value [json::write string ""]                          \
+                        type [json::write string $TYPES(d)]                    \
+                        variablesReference [_MakeVariableReference dict $value]]
+                  }
+                }
             }
         }
     }
