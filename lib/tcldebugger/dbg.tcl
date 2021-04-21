@@ -1,6 +1,6 @@
 # dbg.tcl
 #
-#	This file implements the debugger API.
+#       This file implements the debugger API.
 #
 # Copyright (c) 1998-2000 Ajuba Solutions
 # Copyright (c) 2017 Forward Folio LLC
@@ -25,8 +25,8 @@ namespace eval dbg {
     # debugging options --
     #
     # Fields:
-    #   logLevel	Max level to output
-    #	logFile		File handle where logging messages should be written.
+    #   logLevel        Max level to output
+    #   logFile         File handle where logging messages should be written.
 
     variable logLevel info
     variable logFile stderr
@@ -34,26 +34,26 @@ namespace eval dbg {
     # startup options --
     #
     # Fields:
-    #   libDir		The directory that contains the debugger scripts.
+    #   libDir          The directory that contains the debugger scripts.
 
     variable libDir {}
     
     # nub communication data structure --
     #
-    #	Communication with the nub is performed using a socket.  The
-    #	debugger creates a server socket that a nub will connect to
-    #	when starting.  If the nub is started by the debugger, then 
-    #	the process id is also recorded.
+    #   Communication with the nub is performed using a socket.  The
+    #   debugger creates a server socket that a nub will connect to
+    #   when starting.  If the nub is started by the debugger, then 
+    #   the process id is also recorded.
     #
     # Fields:
-    #	nubSocket	Socket to use to communicate with the
-    #			currently connected nub.  Set to -1 if no
-    #			nub is currently connected. 
-    #	serverSocket	Socket listening for nub connect requests.
-    #	serverPort	Port that the server is listening on.
-    #	appPid		Process ID for application started by the debugger.
-    #	appHost		Name of host that nub is running on.
-    #   appVersion 	The tcl_version of the running app.
+    #   nubSocket       Socket to use to communicate with the
+    #                   currently connected nub.  Set to -1 if no
+    #                   nub is currently connected. 
+    #   serverSocket    Socket listening for nub connect requests.
+    #   serverPort      Port that the server is listening on.
+    #   appPid          Process ID for application started by the debugger.
+    #   appHost         Name of host that nub is running on.
+    #   appVersion      The tcl_version of the running app.
 
     variable nubSocket -1
     variable serverSocket -1
@@ -64,11 +64,11 @@ namespace eval dbg {
 
     # application state data structure --
     #
-    #	appState	One of running, stopped, or dead.
-    #	currentPC	Location information for statement where the app
-    #			last stopped.
-    #   currentLevel	Current scope level for use in uplevel and upvar.
-    #	stack		Current virtual stack.
+    #   appState        One of running, stopped, or dead.
+    #   currentPC       Location information for statement where the app
+    #                   last stopped.
+    #   currentLevel    Current scope level for use in uplevel and upvar.
+    #   stack           Current virtual stack.
 
     variable appState "dead"
     variable currentPC {}
@@ -77,43 +77,43 @@ namespace eval dbg {
 
     # debugger events --
     #
-    #	Asynchronous changes in debugger state will be reported to the GUI
-    #	via event callbacks.  The set of event types includes:
+    #   Asynchronous changes in debugger state will be reported to the GUI
+    #   via event callbacks.  The set of event types includes:
     #
-    #	any		Any of the following events fire.
-    #   attach		A new client application has just attached to the
-    #			debugger but has not stopped yet.
-    #	linebreak 	The client application hit a line breakpoint.
-    #	varbreak	The client application hit a variable breakpoint.
-    #	userbreak	The client application hit a debugger_break command.
-    #	exit		The application has terminated.
-    #	result		An async eval completed.  The result string
-    #			is appended to the callback script.
-    #	error		An error occurred in the script.  The error message,
-    #			error info, and error code are appended to the script.
-    #   cmdresult	The client application completed the current command
-    #			and is stopped waiting to display the result.  The
-    #			result string is appended to the callback script.
+    #   any             Any of the following events fire.
+    #   attach          A new client application has just attached to the
+    #                   debugger but has not stopped yet.
+    #   linebreak       The client application hit a line breakpoint.
+    #   varbreak        The client application hit a variable breakpoint.
+    #   userbreak       The client application hit a debugger_break command.
+    #   exit            The application has terminated.
+    #   result          An async eval completed.  The result string
+    #                   is appended to the callback script.
+    #   error           An error occurred in the script.  The error message,
+    #                   error info, and error code are appended to the script.
+    #   cmdresult       The client application completed the current command
+    #                   and is stopped waiting to display the result.  The
+    #                   result string is appended to the callback script.
     #
     #   All of the handlers for an event are stored as a list in the
     #   registeredEvent array indexed by event type.
 
     variable registeredEvent
     variable validEvents {
-	any attach instrument linebreak varbreak userbreak
-	error exit result cmdresult
+        any attach instrument linebreak varbreak userbreak
+        error exit result cmdresult
     }
 
     # evaluate id generation --
     #
-    #   evalId		A unique number used as the return ID for
-    #			a call to dbg::evaluate.
+    #   evalId          A unique number used as the return ID for
+    #                   a call to dbg::evaluate.
 
     variable evalId 0
 
     # temporary breakpoint --
     #
-    #   tempBreakpoint	The current run-to-line breakpoint.
+    #   tempBreakpoint  The current run-to-line breakpoint.
 
     variable tempBreakpoint {}
 
@@ -123,7 +123,7 @@ namespace eval dbg {
 
     # launch delegate --
     #
-    #    appLaunchDelegate	a proc taking { command stdin } which will
+    #    appLaunchDelegate      a proc taking { command stdin } which will
     #    launch application for local debugging. stdin is a string which should
     #    be written to the stdin of the application
     #
@@ -163,28 +163,28 @@ proc dbg::attach_remote { host port } {
 
 # dbg::start --
 #
-#	Starts the application.  Generates an error is one is already running.
+#       Starts the application.  Generates an error is one is already running.
 #
 # Arguments:
-#	application	The shell in which to run the script.
-#	startDir	the directory where the client program should be
-#			started. 
-#	script		The script to run in the application.
-#	argList		A list of commandline arguments to pass to the script.
-#	clientData	An opaque piece of data that will be passed through
-#			to the nub and returned on the Attach event.
+#       application     The shell in which to run the script.
+#       startDir        the directory where the client program should be
+#                       started. 
+#       script          The script to run in the application.
+#       argList         A list of commandline arguments to pass to the script.
+#       clientData      An opaque piece of data that will be passed through
+#                       to the nub and returned on the Attach event.
 #
 # Results:
-#	None.
+#       None.
 
-proc dbg::start {application startDir script argList clientData} {
+proc dbg::start {application startDir script argList clientData { setenv {} }} {
     variable appState
     variable libDir
     variable serverPort
     variable appLaunchDelegate
 
     if {$appState != "dead"} {
-	error "dbg::start called with an app that is already started."
+        error "dbg::start called with an app that is already started."
     }
 
     set oldDir [pwd]
@@ -192,58 +192,66 @@ proc dbg::start {application startDir script argList clientData} {
     # Determine the start directory.  Relative paths are computed from the
     # debugger startup directory.
 
+    set oldEnv [array get ::env]
+
     if {[catch {
-	# If the start directory is blank, use the debugger startup directory,
-	# otherwise use the specified directory.
+        # If the start directory is blank, use the debugger startup directory,
+        # otherwise use the specified directory.
 
-	if { $startDir != "" } {
-	    cd $startDir
-	}
-	
-	# start up the application
+        if { $startDir != "" } {
+            cd $startDir
+        }
 
-	if {$::tcl_platform(platform) == "windows"} {
-	    set args ""
-	    foreach arg [list \
-		    [file nativename [file join $libDir appLaunch.tcl]] \
-		    127.0.0.1 \
-		    $serverPort \
-		    [file nativename $script] \
-		    $clientData] {
-		if {([string length $arg] == 0) \
-			|| ([string first " " $arg] != -1)} {
-		    set quote 1
-		} else {
-		    set quote 0
-		}
-		regsub -all {(\\)*"} $arg {\1\1\\"} arg
-		if {$quote} {
-		    lappend args "\"$arg\""
-		} else {
-		    lappend args $arg
-		}
-	    }
-	    exec {*}[auto_execok start] [file nativename $application] {*}$args {*}$argList \
-		    [file nativename $startDir] &
-	} else {
-	    set args ""
-	    # Ensure that the argument string is a valid Tcl list so we can
-	    # safely pass it through eval.
+        if { $setenv ne "" } {
+            dict for { k v } $setenv {
+                set ::env($k) $v
+            }
+        }
 
-	    if {[catch {
-		foreach arg $argList {
-		    lappend args $arg
-		}
-	    }]} {
-		# The list wasn't valid so fall back to splitting on
-		# spaces and ignoring null values.
+        # start up the application
 
-		foreach arg [split [string trim $argList]] {
-		    if {$arg != ""} {
-			lappend args $arg
-		    }
-		}
-	    }
+        if {$::tcl_platform(platform) == "windows"} {
+            set args ""
+            foreach arg [list \
+                    [file nativename [file join $libDir appLaunch.tcl]] \
+                    127.0.0.1 \
+                    $serverPort \
+                    [file nativename $script] \
+                    $clientData] {
+                if {([string length $arg] == 0) \
+                        || ([string first " " $arg] != -1)} {
+                    set quote 1
+                } else {
+                    set quote 0
+                }
+                regsub -all {(\\)*"} $arg {\1\1\\"} arg
+                if {$quote} {
+                    lappend args "\"$arg\""
+                } else {
+                    lappend args $arg
+                }
+            }
+            exec {*}[auto_execok start] [file nativename $application] {*}$args {*}$argList \
+                    [file nativename $startDir] &
+        } else {
+            set args ""
+            # Ensure that the argument string is a valid Tcl list so we can
+            # safely pass it through eval.
+
+            if {[catch {
+                foreach arg $argList {
+                    lappend args $arg
+                }
+            }]} {
+                # The list wasn't valid so fall back to splitting on
+                # spaces and ignoring null values.
+
+                foreach arg [split [string trim $argList]] {
+                    if {$arg != ""} {
+                        lappend args $arg
+                    }
+                }
+            }
 
 
             set _argv [list 127.0.0.1 $serverPort $script $clientData {*}$args]
@@ -258,28 +266,32 @@ proc dbg::start {application startDir script argList clientData} {
             }
             ::dbg::Log debug "Launched $application with $_input" 
             close $f
-	}
+        }
     } msg]} {
-	# Make sure to restore the original directory before throwing 
-	# the error.
+        # Make sure to restore the original directory before throwing 
+        # the error.
 
-	cd $oldDir
-	error $msg $::errorInfo $::errorCode
+        cd $oldDir
+        array unset ::env
+        array set ::env $oldEnv 
+        error $msg $::errorInfo $::errorCode
     }
     cd $oldDir
+    array unset ::env
+    array set ::env $oldEnv 
     return
 }
 
 # dbg::kill --
 #
-#	Kills the current application.  Generates an error if the application
-#	is already dead.
+#       Kills the current application.  Generates an error if the application
+#       is already dead.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::kill {} {
     variable appState
@@ -289,12 +301,12 @@ proc dbg::kill {} {
     variable tempBreakpoint
 
     if {$appState == "dead"} {
-	error "dbg::kill called with an app that is already dead."
+        error "dbg::kill called with an app that is already dead."
     }
 
     # Try to kill the application process.
     if {[dbg::isLocalhost]} {
-	catch {::kill $appPid}
+        catch {::kill $appPid}
     }
 
     HandleClientExit
@@ -303,24 +315,24 @@ proc dbg::kill {} {
 
 # dbg::step --
 #
-#	Runs the currently stopped application to the next instrumented
-#	statement (at the level specified, if one is specified).
-#	Generates an error if an application is currently running.
+#       Runs the currently stopped application to the next instrumented
+#       statement (at the level specified, if one is specified).
+#       Generates an error if an application is currently running.
 #
 # Arguments:
-#	level	The stack level at which to stop in the next instrumented
-#		statement.
+#       level   The stack level at which to stop in the next instrumented
+#               statement.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::step {{level any}} {
     variable appState
 
     if {$appState != "stopped"} {
-	error "dbg::step called with an app that is not stopped."
+        error "dbg::step called with an app that is not stopped."
     }
-    set appState "running"		
+    set appState "running"              
 
     Log timing {DbgNub_Run $level}
     SendAsync DbgNub_Run $level
@@ -329,18 +341,18 @@ proc dbg::step {{level any}} {
 
 # dbg::evaluate --
 #
-#	This command causes the application to evaluate the given script
-#	at the specified level.  When the script completes, a result
-#	event is generated.
-#	Generates an error if the application is not currently stopped.
+#       This command causes the application to evaluate the given script
+#       at the specified level.  When the script completes, a result
+#       event is generated.
+#       Generates an error if the application is not currently stopped.
 #
 # Arguments:
-#	level	The stack level at which to evaluate the script.
-#	script	The script to be evaluated by the application.
+#       level   The stack level at which to evaluate the script.
+#       script  The script to be evaluated by the application.
 #
 # Results:
-#	Returns a unqiue id for this avaluate.  The id can be used
-#	to match up the returned result.
+#       Returns a unqiue id for this avaluate.  The id can be used
+#       to match up the returned result.
 
 proc dbg::evaluate {level script} {
     variable appState
@@ -348,11 +360,11 @@ proc dbg::evaluate {level script} {
     variable evalId
     
     if {$appState != "stopped"} {
-	error "dbg::evaluate called with an app that is not stopped."
+        error "dbg::evaluate called with an app that is not stopped."
     }
 
     if {$currentLevel < $level} {
-	error "dbg::evaluate called with invalid level \"$level\""
+        error "dbg::evaluate called with invalid level \"$level\""
     }
 
     incr evalId
@@ -364,34 +376,34 @@ proc dbg::evaluate {level script} {
 
 # dbg::run --
 #
-#	Runs the currently stopped application to either completion or the 
-#	next breakpoint.  Generates an error if an application is not
-#	currently stopped.
+#       Runs the currently stopped application to either completion or the 
+#       next breakpoint.  Generates an error if an application is not
+#       currently stopped.
 #
 # Arguments:
-#	location	Optional.  Specifies the location for a temporary
-#			breakpoint that will be cleared the next time the
-#			application stops.
+#       location        Optional.  Specifies the location for a temporary
+#                       breakpoint that will be cleared the next time the
+#                       application stops.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::run {{location {}}} {
     variable appState
     variable tempBreakpoint 
 
     if {$appState != "stopped"} {
-	error "dbg::run called with an app that is not stopped."
+        error "dbg::run called with an app that is not stopped."
     }
 
     # If requested, set a temporary breakpoint at the specified location.
     
     if {$location != ""} {
-	 set tempBreakpoint [dbg::addLineBreakpoint $location]
+         set tempBreakpoint [dbg::addLineBreakpoint $location]
     }
     
     # Run until the next breakpoint
-    set appState "running"	
+    set appState "running"      
     SendAsync DbgNub_Run
 
     return
@@ -399,21 +411,21 @@ proc dbg::run {{location {}}} {
 
 # dbg::interrupt --
 #
-#	Interrupts the currently running application by stopping at the next
-#	instrumented statement or breaking into the event loop.
-#	Generates an error if no application is currently running.
+#       Interrupts the currently running application by stopping at the next
+#       instrumented statement or breaking into the event loop.
+#       Generates an error if no application is currently running.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::interrupt {} {
     variable appState
 
     if {$appState != "running"} {
-	error "dbg::interrupt called with an app that is not running."
+        error "dbg::interrupt called with an app that is not running."
     }
 
     # Stop at the next instrumented statement
@@ -425,22 +437,22 @@ proc dbg::interrupt {} {
 
 # dbg::register --
 #
-#	Adds a callback for the specified event type.  If the event is
-#	not a valid event, an error is generated.
+#       Adds a callback for the specified event type.  If the event is
+#       not a valid event, an error is generated.
 #
 # Arguments:
-#	event	Type of event on which to make the callback.
-#	script	Code to execute when a callback is made.
+#       event   Type of event on which to make the callback.
+#       script  Code to execute when a callback is made.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::register {event script} {
     variable registeredEvent
     variable validEvents
 
     if {[lsearch $validEvents $event] == -1} {
-	error "dbg::register called with invalid event \"$event\""
+        error "dbg::register called with invalid event \"$event\""
     }
     lappend registeredEvent($event) $script
     return
@@ -448,46 +460,46 @@ proc dbg::register {event script} {
 
 # dbg::unregister --
 #
-#	Removes the callback specified by the event and script.  If the
-#	specified script is not already registered with the given event,
-#	an error is generated.
+#       Removes the callback specified by the event and script.  If the
+#       specified script is not already registered with the given event,
+#       an error is generated.
 #
 # Arguments:
-#	event	Type of event whose callback to remove.
-#	script	The script that was registered with the given event type.
+#       event   Type of event whose callback to remove.
+#       script  The script that was registered with the given event type.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::unregister {event script} {
     variable registeredEvent
 
     if {[info exists registeredEvent($event)]} {
 
-	set i [lsearch $registeredEvent($event) $script]
+        set i [lsearch $registeredEvent($event) $script]
 
-	if {$i == -1} {
-	    error "dbg::unregister called with non-registered script \"$script\"."
-	}
-	set registeredEvent($event) [lreplace $registeredEvent($event) $i $i]
-	return
+        if {$i == -1} {
+            error "dbg::unregister called with non-registered script \"$script\"."
+        }
+        set registeredEvent($event) [lreplace $registeredEvent($event) $i $i]
+        return
     }
     error "dbg::unregister called with non-registered event \"$event\"."
 }
 
 # dbg::DeliverEvent --
 #
-#	Deliver an event to any scripts that have registered
-#	interest in the event.
+#       Deliver an event to any scripts that have registered
+#       interest in the event.
 #
 # Arguments:
-#	event	The event to deliver.
-#	args	Any arguments that should be passed to the script.
-#		Note that we need to be careful here since the data
-#		may be coming from untrusted code and may be dangerous.
+#       event   The event to deliver.
+#       args    Any arguments that should be passed to the script.
+#               Note that we need to be careful here since the data
+#               may be coming from untrusted code and may be dangerous.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::DeliverEvent {event args} {
     variable registeredEvent
@@ -499,18 +511,18 @@ proc dbg::DeliverEvent {event args} {
 
     set newList {}
     foreach arg $args {
-	lappend newList $arg
+        lappend newList $arg
     }
 
     if {[info exists registeredEvent($event)]} {
-	foreach script $registeredEvent($event) {
-	    uplevel #0 $script $newList
-	}
+        foreach script $registeredEvent($event) {
+            uplevel #0 $script $newList
+        }
     }
     if {[info exists registeredEvent(any)]} {
-	foreach script $registeredEvent(any) {
-	    uplevel #0 $script $event $newList
-	}
+        foreach script $registeredEvent(any) {
+            uplevel #0 $script $event $newList
+        }
     }
 
     return
@@ -518,23 +530,23 @@ proc dbg::DeliverEvent {event args} {
 
 # dbg::getLevel --
 #
-#	Returns the stack level at which the application is currently
-#	running.
-#	Generates an error if the application is not currently stopped.
+#       Returns the stack level at which the application is currently
+#       running.
+#       Generates an error if the application is not currently stopped.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	Returns the stack level at which the application is currently
-#	running.
+#       Returns the stack level at which the application is currently
+#       running.
 
 proc dbg::getLevel {} {
     variable appState
     variable currentLevel
     
     if {$appState != "stopped"} {
-	error "dbg::getLevel called with an app that is not stopped."
+        error "dbg::getLevel called with an app that is not stopped."
     }
 
     return $currentLevel
@@ -542,23 +554,23 @@ proc dbg::getLevel {} {
 
 # dbg::getPC --
 #
-#	Returns the location which the application is currently
-#	executing.
-#	Generates an error if the application is not currently stopped.
+#       Returns the location which the application is currently
+#       executing.
+#       Generates an error if the application is not currently stopped.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	Returns the location which the application is currently
-#	executing.
+#       Returns the location which the application is currently
+#       executing.
 
 proc dbg::getPC {} {
     variable appState
     variable currentPC
     
     if {$appState != "stopped"} {
-	error "dbg::getPC called with an app that is not stopped."
+        error "dbg::getPC called with an app that is not stopped."
     }
 
     return $currentPC
@@ -566,46 +578,46 @@ proc dbg::getPC {} {
 
 # dbg::getStack --
 #
-#	Returns information about each frame on the current Tcl stack
-#	up to the most closely nested global scope.  The format of the
-#	stack information is a list of elements that have the
-#	following form:
-#		{level location type args ...}
-# 	The level indicates the Tcl scope level, as used by uplevel.
-#	The location refers to the location of the statement that is
-#	currently executing (or about to be executed in the current
-#	frame).  The type determines how the remainder of the
-#	arguments are to be interpreted and should be one of the
-#	following values:
-#		global	The stack frame is outside of any procedure
-#			scope.  There are no additonal arguments.
-#		proc	The statement is inside a procedure.  The
-#			first argument is the procedure name and the
-#			remaining arguments are the names of the
-#			procedure arguments.
-#		source	This entry in the stack is a virtual frame
-#			that corresponds to a change in block due to a
-#			source command.  There are no arguments.
-#	Eventually we will want to provide support for other virtual
-#	stack frames so we can handle other forms of dynamic code that
-#	are executed in the current stack scope (e.g. eval).  For now
-#	we will only handle "source", since it is a critical case.
+#       Returns information about each frame on the current Tcl stack
+#       up to the most closely nested global scope.  The format of the
+#       stack information is a list of elements that have the
+#       following form:
+#               {level location type args ...}
+#       The level indicates the Tcl scope level, as used by uplevel.
+#       The location refers to the location of the statement that is
+#       currently executing (or about to be executed in the current
+#       frame).  The type determines how the remainder of the
+#       arguments are to be interpreted and should be one of the
+#       following values:
+#               global  The stack frame is outside of any procedure
+#                       scope.  There are no additonal arguments.
+#               proc    The statement is inside a procedure.  The
+#                       first argument is the procedure name and the
+#                       remaining arguments are the names of the
+#                       procedure arguments.
+#               source  This entry in the stack is a virtual frame
+#                       that corresponds to a change in block due to a
+#                       source command.  There are no arguments.
+#       Eventually we will want to provide support for other virtual
+#       stack frames so we can handle other forms of dynamic code that
+#       are executed in the current stack scope (e.g. eval).  For now
+#       we will only handle "source", since it is a critical case.
 #
-#	Generates an error if the application is not currently stopped.
+#       Generates an error if the application is not currently stopped.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	Returns a list of stack locations of the following form:
-#		{level location type args ...}
+#       Returns a list of stack locations of the following form:
+#               {level location type args ...}
 
 proc dbg::getStack {} {
     variable appState
     variable stack
 
     if {$appState != "stopped"} {
-	error "dbg::getStack called with an app that is not stopped."
+        error "dbg::getStack called with an app that is not stopped."
     }
 
     return $stack
@@ -613,26 +625,26 @@ proc dbg::getStack {} {
 
 # dbg::getProcs --
 #
-#	Returns a list of all procedures in the application, excluding
-#	those added by the debugger itself.  The list consists of
-#	elements of the form {<procname> <location>}, where the
-#	location refers to the entire procedure definition.  If the
-#	procedure is uninstrumented, the location is null.
-#	Generates an error if the application is not currently stopped.
+#       Returns a list of all procedures in the application, excluding
+#       those added by the debugger itself.  The list consists of
+#       elements of the form {<procname> <location>}, where the
+#       location refers to the entire procedure definition.  If the
+#       procedure is uninstrumented, the location is null.
+#       Generates an error if the application is not currently stopped.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	Returns a list of all procedures in the application, excluding
-#	those added by the debugger itself.  The list consists of
-#	elements of the form {<procname> <location>}.
+#       Returns a list of all procedures in the application, excluding
+#       those added by the debugger itself.  The list consists of
+#       elements of the form {<procname> <location>}.
 
 proc dbg::getProcs {} {
     variable appState
 
     if {$appState != "stopped"} {
-	error "dbg::getProcs called with an app that is not stopped."
+        error "dbg::getProcs called with an app that is not stopped."
     }
 
     return [Send DbgNub_GetProcs]
@@ -640,21 +652,21 @@ proc dbg::getProcs {} {
 
 # dbg::getProcLocation --
 #
-#	Get a location that refers to the specified procedure.  This
-#	function only works on uninstrumented procedures because the
-#	location will refer to an uninstrumented procedure block.
+#       Get a location that refers to the specified procedure.  This
+#       function only works on uninstrumented procedures because the
+#       location will refer to an uninstrumented procedure block.
 #
 # Arguments:
-#	name	The name of the procedure.
+#       name    The name of the procedure.
 #
 # Results:
-#	Returns a location that can be used to get the procedure
-#	definition.
+#       Returns a location that can be used to get the procedure
+#       definition.
 
 proc dbg::getProcLocation {name} {
     variable appState
     if {$appState != "stopped"} {
-	error "dbg::getProcLocation called with an app that is not stopped."
+        error "dbg::getProcLocation called with an app that is not stopped."
     }
     blk::SetSource Temp [Send DbgNub_GetProcDef $name]
     return [loc::makeLocation Temp 1]
@@ -662,16 +674,16 @@ proc dbg::getProcLocation {name} {
 
 # dbg::getProcBody --
 #
-#	Given the location for an instrumented procedure we extract
-#	the body of the procedure from the origional source and return
-#	the uninstrumented body.  This is used, for example, by the
-#	info body command to return the origional body of code.
+#       Given the location for an instrumented procedure we extract
+#       the body of the procedure from the origional source and return
+#       the uninstrumented body.  This is used, for example, by the
+#       info body command to return the origional body of code.
 #
 # Arguments:
-#	loc	The location of the procedure we want the body for.
+#       loc     The location of the procedure we want the body for.
 #
 # Results:
-#	The uninstrumented body of the procedure.
+#       The uninstrumented body of the procedure.
 
 proc dbg::getProcBody {loc} {
     # This function is more complicated that it would seem at first.  The
@@ -690,19 +702,19 @@ proc dbg::getProcBody {loc} {
 
 # dbg::uninstrumentProc --
 #
-#	Given a fully qualified procedure name that is currently 
-#	instrumented this procedure will insteract with the 
-#	application to redefine the procedure as un uninstrumented
-#	procedure.
+#       Given a fully qualified procedure name that is currently 
+#       instrumented this procedure will insteract with the 
+#       application to redefine the procedure as un uninstrumented
+#       procedure.
 #
 # Arguments:
-#	procName	A fully qualified procedure name.
-#	loc		This is the location tag for the procedure
-#			passing this makes the implementation go
-#			much faster.
+#       procName        A fully qualified procedure name.
+#       loc             This is the location tag for the procedure
+#                       passing this makes the implementation go
+#                       much faster.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::uninstrumentProc {procName loc} {
     set body [dbg::getProcBody $loc]
@@ -712,16 +724,16 @@ proc dbg::uninstrumentProc {procName loc} {
 
 # dbg::instrumentProc --
 #
-#	Given a fully qualified procedure name this function will
-#	instrument the procedure body and redefine the proc to use
-#	the new procedure body.
+#       Given a fully qualified procedure name this function will
+#       instrument the procedure body and redefine the proc to use
+#       the new procedure body.
 #
 # Arguments:
-#	procName	A fully qualified procedure name.
-#	loc		The tmp loc for this procedure.
+#       procName        A fully qualified procedure name.
+#       loc             The tmp loc for this procedure.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::instrumentProc {procName loc} {
     set block [loc::getBlock $loc]
@@ -732,28 +744,28 @@ proc dbg::instrumentProc {procName loc} {
 
 # dbg::getVariables --
 #
-#	Returns the list of variables that are visible at the specified
-#	level.
-#	Generates an error if the application is not currently stopped.
+#       Returns the list of variables that are visible at the specified
+#       level.
+#       Generates an error if the application is not currently stopped.
 #
 # Arguments:
-#	level	The stack level whose variables are returned.
-#	vars	List of variable names to fetch type info for.
+#       level   The stack level whose variables are returned.
+#       vars    List of variable names to fetch type info for.
 #
 # Results:
-#	Returns the list of variables that are visible at the specified
-#	level.
+#       Returns the list of variables that are visible at the specified
+#       level.
 
 proc dbg::getVariables {level {vars {}}} {
     variable appState
     variable currentLevel
 
     if {$appState != "stopped"} {
-	error "dbg::getVariables called with an app that is not stopped."
+        error "dbg::getVariables called with an app that is not stopped."
     }
 
     if {$currentLevel < $level} {
-	error "dbg::getVar called with invalid level \"$level\""
+        error "dbg::getVar called with invalid level \"$level\""
     }
 
     return [Send DbgNub_GetVariables $level $vars]
@@ -761,37 +773,37 @@ proc dbg::getVariables {level {vars {}}} {
 
 # dbg::getVar --
 #
-#	Returns a list containing information about each of the
-#	variables specified in varList.  The returned list consists of
-#	elements of the form {<name> <type> <value>}.  Type indicates
-#	if the variable is scalar or an array and is either "s" or
-#	"a".  If the variable is an array, the result of an array get
-#	is returned for the value, otherwise it is the scalar value.
-#	Any names that were specified in varList but are not valid
-#	variables will be omitted from the returned list.
-#	Generates an error if the application is not currently stopped.
+#       Returns a list containing information about each of the
+#       variables specified in varList.  The returned list consists of
+#       elements of the form {<name> <type> <value>}.  Type indicates
+#       if the variable is scalar or an array and is either "s" or
+#       "a".  If the variable is an array, the result of an array get
+#       is returned for the value, otherwise it is the scalar value.
+#       Any names that were specified in varList but are not valid
+#       variables will be omitted from the returned list.
+#       Generates an error if the application is not currently stopped.
 #
 # Arguments:
-#	level		The stack level of the variables in varList.
-#	maxlen		The maximum length of any data element to fetch, may
-#			be -1 to fetch everything.
-#	varList		A list of variables whose information is returned.
+#       level           The stack level of the variables in varList.
+#       maxlen          The maximum length of any data element to fetch, may
+#                       be -1 to fetch everything.
+#       varList         A list of variables whose information is returned.
 #
 # Results:
-#	Returns a list containing information about each of the
-#	variables specified in varList.  The returned list consists of
-#	elements of the form {<name> <type> <value>}.
+#       Returns a list containing information about each of the
+#       variables specified in varList.  The returned list consists of
+#       elements of the form {<name> <type> <value>}.
 
 proc dbg::getVar {level maxlen varList} {
     variable appState
     variable currentLevel
 
     if {$appState != "stopped"} {
-	error "dbg::getVar called with an app that is not stopped."
+        error "dbg::getVar called with an app that is not stopped."
     }
 
     if {$currentLevel < $level} {
-	error "dbg::getVar called with invalid level \"$level\""
+        error "dbg::getVar called with invalid level \"$level\""
     }
 
     return [Send DbgNub_GetVar $level $maxlen $varList]
@@ -799,29 +811,29 @@ proc dbg::getVar {level maxlen varList} {
 
 # dbg::setVar --
 #
-#	Sets the value of a variable.  If the variable is an array,
-#	the value must be suitable for array set, or an error is
-#	generated.  If no such variable exists, an error is generated.
-#	Generates an error if the application is not currently stopped.
+#       Sets the value of a variable.  If the variable is an array,
+#       the value must be suitable for array set, or an error is
+#       generated.  If no such variable exists, an error is generated.
+#       Generates an error if the application is not currently stopped.
 #
 # Arguments:
-#	level	The stack level of the variable to set.
-#	var	The name of the variable to set.
-#	value	The new value of var.
+#       level   The stack level of the variable to set.
+#       var     The name of the variable to set.
+#       value   The new value of var.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::setVar {level var value} {
     variable appState
     variable currentLevel
 
     if {$appState != "stopped"} {
-	error "dbg::setVar called with an app that is not stopped."
+        error "dbg::setVar called with an app that is not stopped."
     }
 
     if {$currentLevel < $level} {
-	error "dbg::setVar called with invalid level \"$level\""
+        error "dbg::setVar called with invalid level \"$level\""
     }
 
     SendAsync DbgNub_SetVar $level $var $value
@@ -830,19 +842,19 @@ proc dbg::setVar {level var value} {
 
 # dbg::getResult --
 #
-#	Fetch the result and return code of the last instrumented statement
-#	that executed.
+#       Fetch the result and return code of the last instrumented statement
+#       that executed.
 #
 # Arguments:
-#	maxlen	Truncate long values after maxlen characters.
+#       maxlen  Truncate long values after maxlen characters.
 #
 # Results:
-#	Returns the list of {code result}.
+#       Returns the list of {code result}.
 
 proc dbg::getResult {maxlen} {
     variable appState
     if {$appState != "stopped"} {
-	error "dbg::getVar called with an app that is not stopped."
+        error "dbg::getVar called with an app that is not stopped."
     }
 
     return [Send DbgNub_GetResult $maxlen]
@@ -851,60 +863,60 @@ proc dbg::getResult {maxlen} {
 
 # dbg::addLineBreakpoint --
 #
-#	Set a breakpoint at the given location.  If no such location
-#	exists, an error is generated.
-#	Generates an error if an application is currently running.
+#       Set a breakpoint at the given location.  If no such location
+#       exists, an error is generated.
+#       Generates an error if an application is currently running.
 #
 # Arguments:
-#	location	The location of the breakpoint to add.
+#       location        The location of the breakpoint to add.
 #
 # Results:
-#	Returns a breakpoint identifier.
+#       Returns a breakpoint identifier.
 
 proc dbg::addLineBreakpoint {location {test {}}} {
     variable appState
     
     if {$appState != "dead"} {
-	SendAsync DbgNub_AddBreakpoint line $location $test
+        SendAsync DbgNub_AddBreakpoint line $location $test
     }
     return [break::MakeBreakpoint line $location $test]
 }
 
 # dbg::getLineBreakpoints --
 #
-#	Get the breakpoints that are set on a given line, or all
-#	line breakpoints.
+#       Get the breakpoints that are set on a given line, or all
+#       line breakpoints.
 #
 # Arguments:
-#	location	Optional. The location of the breakpoint to get.
+#       location        Optional. The location of the breakpoint to get.
 #
 # Results:
-#	Returns a list of line-based breakpoint indentifiers.
+#       Returns a list of line-based breakpoint indentifiers.
 
 proc dbg::getLineBreakpoints {{location {}}} {
     variable tempBreakpoint
     
     set bps [break::GetLineBreakpoints $location]
     if {$tempBreakpoint != ""} {
-	set index [lsearch -exact $bps $tempBreakpoint]
-	if {$index != -1} {
-	    set bps [lreplace $bps $index $index]
-	}
+        set index [lsearch -exact $bps $tempBreakpoint]
+        if {$index != -1} {
+            set bps [lreplace $bps $index $index]
+        }
     }
     return $bps
 }
 
 # dbg::validateBreakpoints --
 #
-#	Get the list of prior bpts and valid bpts for the block.
-#	Move invalid bpts that to nearest valid location.
+#       Get the list of prior bpts and valid bpts for the block.
+#       Move invalid bpts that to nearest valid location.
 #
 # Arguments:
-#	file	The name of the file for this block.
-#	blk	Block for which to validate bpts.
+#       file    The name of the file for this block.
+#       blk     Block for which to validate bpts.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::validateBreakpoints {file blk} {
 
@@ -914,85 +926,85 @@ proc dbg::validateBreakpoints {file blk} {
 
     set warning 0
     foreach bp $bpList {
-	set line [loc::getLine [break::getLocation $bp]]
-	set newLine [dbg::binarySearch $validLines $line]
-	if {$newLine != $line} {
-	    set newLoc [loc::makeLocation $blk $newLine]
-	    set newBp [dbg::moveLineBreakpoint $bp $newLoc]
+        set line [loc::getLine [break::getLocation $bp]]
+        set newLine [dbg::binarySearch $validLines $line]
+        if {$newLine != $line} {
+            set newLoc [loc::makeLocation $blk $newLine]
+            set newBp [dbg::moveLineBreakpoint $bp $newLoc]
             # TODO: Use newBp to report it to the client ?
-	    set warning 1
-	}
+            set warning 1
+        }
     }
 
     if {$warning && [pref::prefGet warnInvalidBp]} {
-	Log warning {invalid breakpoints found in $file have been moved to valid lines.}
+        Log warning {invalid breakpoints found in $file have been moved to valid lines.}
     }
     return
 }
 
 # dbg::binarySearch --
 #
-#	Find the nearest matching line on which to move an invalid bpt.
-#	Find the nearest matching value to elt in ls.
+#       Find the nearest matching line on which to move an invalid bpt.
+#       Find the nearest matching value to elt in ls.
 #
 # Arguments:
-#	ls	Sorted list of ints >= 0.
-#	elt	Integer to match.
+#       ls      Sorted list of ints >= 0.
+#       elt     Integer to match.
 #
 # Results:
-#	Returns the closest match or -1 if ls is empty.
+#       Returns the closest match or -1 if ls is empty.
 
 proc dbg::binarySearch {ls elt} {
     set len [llength $ls]
     if {$len == 0} {
-	return -1
+        return -1
     }
     if {$len == 1} {
-	return [lindex $ls 0]
+        return [lindex $ls 0]
     }
     if {$len == 2} {
-	set e0 [lindex $ls 0]
-	set e1 [lindex $ls 1]
-	if {$elt <= $e0} {
-	    return $e0
-	} elseif {$elt < $e1} {
-	    if {($elt - $e0) <= ($e1 - $elt)} {
-		return $e0
-	    } else {
-		return $e1
-	    }
-	} else {
-	    return $e1
-	}
+        set e0 [lindex $ls 0]
+        set e1 [lindex $ls 1]
+        if {$elt <= $e0} {
+            return $e0
+        } elseif {$elt < $e1} {
+            if {($elt - $e0) <= ($e1 - $elt)} {
+                return $e0
+            } else {
+                return $e1
+            }
+        } else {
+            return $e1
+        }
     }
     set middle [expr {$len / 2}]
     set result [lindex $ls $middle]
     if {$result == $elt} {
-	return $result
+        return $result
     }
     if {$result < $elt} {
-	return [dbg::binarySearch [lrange $ls $middle $len] $elt]
+        return [dbg::binarySearch [lrange $ls $middle $len] $elt]
     } else {
-	return [dbg::binarySearch [lrange $ls 0 $middle] $elt]
+        return [dbg::binarySearch [lrange $ls 0 $middle] $elt]
     }
 }
 
 # dbg::addVarBreakpoint --
 #
-#	Set a breakpoint on the given variable.
+#       Set a breakpoint on the given variable.
 #
 # Arguments:
-#	level		The level at which the variable is accessible.
-#	name		The name of the variable.
+#       level           The level at which the variable is accessible.
+#       name            The name of the variable.
 #
 # Results:
-#	Returns a new breakpoint handle.
+#       Returns a new breakpoint handle.
 
 proc dbg::addVarBreakpoint {level name} {
     variable appState
 
     if {$appState != "stopped"} {
-	error "dbg::addVarBreakpoint called with an app that is not stopped."
+        error "dbg::addVarBreakpoint called with an app that is not stopped."
     }
 
     set handle [Send DbgNub_AddVarTrace $level $name]
@@ -1002,54 +1014,54 @@ proc dbg::addVarBreakpoint {level name} {
 
 # dbg::getVarBreakpoints --
 #
-#	Get the variable breakpoints that are set on a given variable.
-#	If both level and name are null, then all variable breakpoints
-#	are returned.
+#       Get the variable breakpoints that are set on a given variable.
+#       If both level and name are null, then all variable breakpoints
+#       are returned.
 #
 # Arguments:
-#	level		The level at which the variable is accessible.
-#	name		The name of the variable.
+#       level           The level at which the variable is accessible.
+#       name            The name of the variable.
 #
 # Results:
-#	The list of breakpoint handles.
+#       The list of breakpoint handles.
 
 proc dbg::getVarBreakpoints {{level {}} {name {}}} {
     variable appState
 
     if {$appState != "stopped"} {
-	error "dbg::getVarBreakpoints called with an app that is not stopped."
+        error "dbg::getVarBreakpoints called with an app that is not stopped."
     }
     if {$level == ""} {
-	return [break::GetVarBreakpoints]
+        return [break::GetVarBreakpoints]
     }
     set handle [Send DbgNub_GetVarTrace $level $name]
     if {$handle != ""} {
-	return [break::GetVarBreakpoints $handle]
+        return [break::GetVarBreakpoints $handle]
     }
     return ""
 }
 
 # dbg::removeBreakpoint --
 #
-#	Remove the specified breakpoint.  If no such breakpoint
-#	exists, an error is generated.
-#	Generates an error if an application is currently running.
+#       Remove the specified breakpoint.  If no such breakpoint
+#       exists, an error is generated.
+#       Generates an error if an application is currently running.
 #
 # Arguments:
-#	breakpoint	The identifier of the breakpoint to remove.
+#       breakpoint      The identifier of the breakpoint to remove.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::removeBreakpoint {breakpoint} {
     variable appState
     
     if {$appState != "dead"} {
-	SendAsync DbgNub_RemoveBreakpoint [break::getType $breakpoint] \
-		[break::getLocation $breakpoint] [break::getTest $breakpoint]
-	if {[break::getType $breakpoint] == "var"} {
-	    SendAsync DbgNub_RemoveVarTrace [break::getLocation $breakpoint]
-	}
+        SendAsync DbgNub_RemoveBreakpoint [break::getType $breakpoint] \
+                [break::getLocation $breakpoint] [break::getTest $breakpoint]
+        if {[break::getType $breakpoint] == "var"} {
+            SendAsync DbgNub_RemoveVarTrace [break::getLocation $breakpoint]
+        }
     }
 
     break::Release $breakpoint
@@ -1058,17 +1070,17 @@ proc dbg::removeBreakpoint {breakpoint} {
 
 # dbg::moveLineBreakpoint --
 #
-#	Remove the specified breakpoint.  If no such breakpoint
-#	exists, an error is generated.  Add a new breakpoint on the
-#	specified line.
-#	Generates an error if an application is currently running.
+#       Remove the specified breakpoint.  If no such breakpoint
+#       exists, an error is generated.  Add a new breakpoint on the
+#       specified line.
+#       Generates an error if an application is currently running.
 #
 # Arguments:
-#	breakpoint	The identifier of the breakpoint to move.
-#	newLoc		The new location for the breakpoint.
+#       breakpoint      The identifier of the breakpoint to move.
+#       newLoc          The new location for the breakpoint.
 #
 # Results:
-#	Returnes the new breakpoint or "" if none was added.
+#       Returnes the new breakpoint or "" if none was added.
 
 proc dbg::moveLineBreakpoint {breakpoint newLoc} {
     variable appState
@@ -1085,40 +1097,40 @@ proc dbg::moveLineBreakpoint {breakpoint newLoc} {
 
     set priorBpts [break::GetLineBreakpoints $newLoc]
     if {[llength $priorBpts] > 0} {
-	if {$removedBpState == "disabled"} {
-	    return ""
-	}
-	foreach priorBpt $priorBpts {
-	    if {[break::getState $priorBpt] != "disabled"} {
-		return ""
-	    }
-	}
-	foreach priorBpt $priorBpts {
-	    dbg::removeBreakpoint $priorBpt	    
-	}
+        if {$removedBpState == "disabled"} {
+            return ""
+        }
+        foreach priorBpt $priorBpts {
+            if {[break::getState $priorBpt] != "disabled"} {
+                return ""
+            }
+        }
+        foreach priorBpt $priorBpts {
+            dbg::removeBreakpoint $priorBpt         
+        }
     }
     return [dbg::addLineBreakpoint $newLoc $removedBpTest]
 }
 
 # dbg::disableBreakpoint --
 #
-#	Disable (without removing) the specified breakpoint.  If no such
-#	breakpoint exists or if the breakpoint is already disabled, an
-#	error is generated.
-#	Generates an error if an application is currently running.
+#       Disable (without removing) the specified breakpoint.  If no such
+#       breakpoint exists or if the breakpoint is already disabled, an
+#       error is generated.
+#       Generates an error if an application is currently running.
 #
 # Arguments:
-#	breakpoint	The identifier of the breakpoint to disable.
+#       breakpoint      The identifier of the breakpoint to disable.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::disableBreakpoint {breakpoint} {
     variable appState
     
     if {$appState != "dead"} {
-	SendAsync DbgNub_RemoveBreakpoint [break::getType $breakpoint] \
-		[break::getLocation $breakpoint] [break::getTest $breakpoint]
+        SendAsync DbgNub_RemoveBreakpoint [break::getType $breakpoint] \
+                [break::getLocation $breakpoint] [break::getTest $breakpoint]
     }
 
     break::SetState $breakpoint disabled
@@ -1127,22 +1139,22 @@ proc dbg::disableBreakpoint {breakpoint} {
 
 # dbg::enableBreakpoint --
 #
-#	Enable the specified breakpoint.  If no such breakoint exists
-#	or if the breakpoint is already enabled, an error is generated.
-#	Generates an error if an application is currently running.
+#       Enable the specified breakpoint.  If no such breakoint exists
+#       or if the breakpoint is already enabled, an error is generated.
+#       Generates an error if an application is currently running.
 #
 # Arguments:
-#	breakpoint	The identifier of the breakpoint to enable.
+#       breakpoint      The identifier of the breakpoint to enable.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::enableBreakpoint {breakpoint} {
     variable appState
     
     if {$appState != "dead"} {
-	SendAsync DbgNub_AddBreakpoint [break::getType $breakpoint] \
-		[break::getLocation $breakpoint] [break::getTest $breakpoint]
+        SendAsync DbgNub_AddBreakpoint [break::getType $breakpoint] \
+                [break::getLocation $breakpoint] [break::getTest $breakpoint]
     }
     
     break::SetState $breakpoint enabled
@@ -1151,15 +1163,15 @@ proc dbg::enableBreakpoint {breakpoint} {
 
 # dbg::initialize --
 #
-#	Initialize the debugger engine.  Intializes the library
-#	directory for the debugger.
+#       Initialize the debugger engine.  Intializes the library
+#       directory for the debugger.
 #
 # Arguments:
-#	dir		Optional.  The directory containing the debugger
-#			scripts.
+#       dir             Optional.  The directory containing the debugger
+#                       scripts.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::initialize {{dir {}}} {
     variable libDir
@@ -1168,9 +1180,9 @@ proc dbg::initialize {{dir {}}} {
     # look in the directory containing the startup script.
 
     if {$dir == {}} {
-	set libDir [file dir [info nameofexecutable]]
+        set libDir [file dir [info nameofexecutable]]
     } else {
-	set libDir $dir
+        set libDir $dir
     }
 
     set oldcwd [pwd]
@@ -1183,19 +1195,19 @@ proc dbg::initialize {{dir {}}} {
 
 # dbg::setServerPort --
 #
-#	This function sets the server port that the debugger listens on.
-#	If another port is opened for listening, it is closed before the
-#	new port is opened.
+#       This function sets the server port that the debugger listens on.
+#       If another port is opened for listening, it is closed before the
+#       new port is opened.
 #
 # Arguments:
-#	port		The new port number the users wants.  If the
-#			port arg is set to "random" then we find a
-#			suitable port in a standard range.
+#       port            The new port number the users wants.  If the
+#                       port arg is set to "random" then we find a
+#                       suitable port in a standard range.
 #
 # Results:
-#	Return 1 if the new port was available and is now being used, 
-#	returns 0 if we couldn't open the new port for some reason.
-#	The old port will still work if we fail.
+#       Return 1 if the new port was available and is now being used, 
+#       returns 0 if we couldn't open the new port for some reason.
+#       The old port will still work if we fail.
 
 proc dbg::setServerPort {port} {
     variable serverSocket
@@ -1205,7 +1217,7 @@ proc dbg::setServerPort {port} {
     # return 1, indicating the port is available.
 
     if {($serverSocket != -1) && ($serverPort == $port)} {
-	return 1
+        return 1
     }
     
     # Close the port if it has been opened.
@@ -1213,36 +1225,36 @@ proc dbg::setServerPort {port} {
     dbg::closeServerSocket
 
     if {$port == "random"} {
-	set result 1
-	set port 16999
-	while {$result != 0} {
-	    incr port
-	    set result [catch \
-		    {socket -server ::dbg::HandleConnect $port} socket]
-	}
+        set result 1
+        set port 16999
+        while {$result != 0} {
+            incr port
+            set result [catch \
+                    {socket -server ::dbg::HandleConnect $port} socket]
+        }
     } else {
-	set result [catch \
-		{socket -server ::dbg::HandleConnect $port} socket]
+        set result [catch \
+                {socket -server ::dbg::HandleConnect $port} socket]
     }
 
     if {$result == 0} {
-	set serverPort $port
-	set serverSocket $socket
+        set serverPort $port
+        set serverSocket $socket
     }
     return [expr {!$result}]
 }
 
 # dbg::getServerPortStatus --
 #
-#	This function returns status information about the connection
-#	betwen the debugger and the debugged app.  The return is a
-#	list of appState & serverPort.
+#       This function returns status information about the connection
+#       betwen the debugger and the debugged app.  The return is a
+#       list of appState & serverPort.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	A Tcl list
+#       A Tcl list
 
 proc dbg::getServerPortStatus {} {
     variable serverPort
@@ -1251,20 +1263,20 @@ proc dbg::getServerPortStatus {} {
     variable appHost
 
     if {$serverSocket == -1} {
-	set status "Not connected"
-	set listenPort "n/a"
+        set status "Not connected"
+        set listenPort "n/a"
     } else {
-	set status "Listening"
-	set listenPort "$serverPort (on [info hostname])"
+        set status "Listening"
+        set listenPort "$serverPort (on [info hostname])"
     }
 
     if {$nubSocket != -1} {
-	set status "Connected"
-	set sockname [fconfigure $nubSocket -sockname]
-	set peername [fconfigure $nubSocket -peername]
+        set status "Connected"
+        set sockname [fconfigure $nubSocket -sockname]
+        set peername [fconfigure $nubSocket -peername]
     } else {
-	set sockname "n/a"
-	set peername "n/a"
+        set sockname "n/a"
+        set peername "n/a"
     }
 
     return [list $status $listenPort $sockname $peername]
@@ -1272,42 +1284,42 @@ proc dbg::getServerPortStatus {} {
 
 # dbg::closeServerSocket --
 #
-#	Close the server socket so the debugger is no longer listening
-#	on the open port.
+#       Close the server socket so the debugger is no longer listening
+#       on the open port.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::closeServerSocket {} {
     variable serverSocket
     if {$serverSocket != -1} {
-	close $serverSocket
-	set serverSocket -1
+        close $serverSocket
+        set serverSocket -1
     }
     return
 }
 
 # dbg::quit --
 #
-#	Clean up the debugger engine.  Kills the background app if it
-#	is still running and shuts down the server socket.  It also
-#	cleans up all of the debugger state.
+#       Clean up the debugger engine.  Kills the background app if it
+#       is still running and shuts down the server socket.  It also
+#       cleans up all of the debugger state.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::quit {} {
     variable appState
     variable tempBreakpoint
 
     if {$appState != "dead"} {
-	catch {dbg::kill}
+        catch {dbg::kill}
     }
     dbg::closeServerSocket
     break::Release all
@@ -1318,15 +1330,15 @@ proc dbg::quit {} {
 
 # dbg::HandleClientExit --
 #
-#	This function is called when the nub terminates in order to clean up
-#	various aspects of the debugger state.
+#       This function is called when the nub terminates in order to clean up
+#       various aspects of the debugger state.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	None.  Removes any variable traces, changes the state to dead,
-#	and generates an "exit" event.
+#       None.  Removes any variable traces, changes the state to dead,
+#       and generates an "exit" event.
 
 proc dbg::HandleClientExit {} {
     variable nubSocket
@@ -1343,14 +1355,14 @@ proc dbg::HandleClientExit {} {
     # also need to mark all instrumented blocks as uninstrumented.
 
     if {$tempBreakpoint != ""} {
-	break::Release $tempBreakpoint
-	set tempBreakpoint {}
+        break::Release $tempBreakpoint
+        set tempBreakpoint {}
     }
     foreach bp [break::GetLineBreakpoints] {
-	set block [loc::getBlock [break::getLocation $bp]]
-	if {[blk::isDynamic $block]} {
-	    break::Release $bp
-	}
+        set block [loc::getBlock [break::getLocation $bp]]
+        if {[blk::isDynamic $block]} {
+            break::Release $bp
+        }
     }
     
     set tempBreakpoint {}
@@ -1371,45 +1383,45 @@ proc dbg::HandleClientExit {} {
 
 # dbg::HandleConnect --
 #
-#	Handle incoming connect requests from the nub.  If there is no
-#	other nub currently connected, creates a file event handler
-#	to watch for events generated by the nub.
+#       Handle incoming connect requests from the nub.  If there is no
+#       other nub currently connected, creates a file event handler
+#       to watch for events generated by the nub.
 #
 # Arguments:
-#	sock	Incoming connection socket.
-#	host	Name of nub host.
-#	port    Incoming connection port.
+#       sock    Incoming connection socket.
+#       host    Name of nub host.
+#       port    Incoming connection port.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::HandleConnect {sock host port} {
     variable nubSocket
     variable appState
 
     if {$nubSocket != -1} {
-	close $sock
+        close $sock
     } else {
-	set nubSocket $sock
-	set appState running
-	fconfigure $sock -translation binary -encoding utf-8
-	fileevent $sock readable ::dbg::HandleNubEvent
+        set nubSocket $sock
+        set appState running
+        fconfigure $sock -translation binary -encoding utf-8
+        fileevent $sock readable ::dbg::HandleNubEvent
 
-	# Close the server socket
-	dbg::closeServerSocket 
+        # Close the server socket
+        dbg::closeServerSocket 
     }
     return
 }
 
 # dbg::SendMessage --
 #
-#	Transmit a list of strings to the nub.
+#       Transmit a list of strings to the nub.
 #
 # Arguments:
-#	args	Strings that will be turned into a list to send.
+#       args    Strings that will be turned into a list to send.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::SendMessage {args} {
     variable nubSocket
@@ -1425,14 +1437,14 @@ proc dbg::SendMessage {args} {
 
 # dbg::GetMessage --
 #
-#	Wait until a message is received from the nub.
+#       Wait until a message is received from the nub.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	Returns the message that was received, or {} if the connection
-#	was closed.
+#       Returns the message that was received, or {} if the connection
+#       was closed.
 
 proc dbg::GetMessage {} {
     variable nubSocket
@@ -1440,7 +1452,7 @@ proc dbg::GetMessage {} {
     set bytes [gets $nubSocket]
     Log message {reading $bytes bytes}
     if { $bytes == "" } {
-	return ""
+        return ""
     }
     set msg [read $nubSocket $bytes]
     Log message {got: '$msg'}
@@ -1449,14 +1461,14 @@ proc dbg::GetMessage {} {
 
 # dbg::SendAsync --
 #
-#	Send the given script to be evaluated in the nub without
-#	waiting for a result.
+#       Send the given script to be evaluated in the nub without
+#       waiting for a result.
 #
 # Arguments:
-#	args	The script to be evaluated.
+#       args    The script to be evaluated.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::SendAsync {args} {
     dbg::Log nub { SendAsync $args }
@@ -1466,52 +1478,52 @@ proc dbg::SendAsync {args} {
 
 # dbg::Send --
 #
-#	Send the given script to be evaluated in the nub.  The 
-#	debugger enters a limited event loop until the result of
-#	the evaluation is received.  This call should only be used
-#	for scripts that are expected to return quickly and cannot
-#	be done in a more asynchronous fashion.
+#       Send the given script to be evaluated in the nub.  The 
+#       debugger enters a limited event loop until the result of
+#       the evaluation is received.  This call should only be used
+#       for scripts that are expected to return quickly and cannot
+#       be done in a more asynchronous fashion.
 #
 # Arguments:
-#	args	The script to be evaluated.
+#       args    The script to be evaluated.
 #
 # Results:
-#	Returns the result of evaluating the script in the nub, 
-#	including any errors that may result.
+#       Returns the result of evaluating the script in the nub, 
+#       including any errors that may result.
 
 proc dbg::Send {args} {
     SendMessage "SEND" 1 $args
     while {1} {
-	set msg [GetMessage]
-	if {$msg == ""} {
-	    return
-	}
-	switch -- [lindex $msg 0] {
-	    RESULT {		# Result of SEND message
-		return [lindex $msg 1]
-	    }
-	    ERROR {		# Error generated by SEND
-		return -code [lindex $msg 2] -errorcode [lindex $msg 3] \
-			-errorinfo [lindex $msg 4] [lindex $msg 1]
-	    }
-	    default {		# Looks like a bug to me
-		error "Unexpected message waiting for reply: $msg"
-	    }
-	}
+        set msg [GetMessage]
+        if {$msg == ""} {
+            return
+        }
+        switch -- [lindex $msg 0] {
+            RESULT {            # Result of SEND message
+                return [lindex $msg 1]
+            }
+            ERROR {             # Error generated by SEND
+                return -code [lindex $msg 2] -errorcode [lindex $msg 3] \
+                        -errorinfo [lindex $msg 4] [lindex $msg 1]
+            }
+            default {           # Looks like a bug to me
+                error "Unexpected message waiting for reply: $msg"
+            }
+        }
     }
 }
 
 # dbg::HandleNubEvent --
 #
-#	This function is called whenever the nub generates an event on
-#	the nub socket.  It will invoke HandleEvent to actually 
-#	process the event.
+#       This function is called whenever the nub generates an event on
+#       the nub socket.  It will invoke HandleEvent to actually 
+#       process the event.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::HandleNubEvent {} {
     variable nubSocket
@@ -1524,104 +1536,104 @@ proc dbg::HandleNubEvent {} {
 
     set result [catch {
 
-	# Get the next message from the nub
+        # Get the next message from the nub
 
-	set msg [GetMessage]
+        set msg [GetMessage]
 
         dbg::Log nub { NUB RX: $msg }
 
-	# If the nub closed the connection, generate an "exit" event.
+        # If the nub closed the connection, generate an "exit" event.
 
-	if {[eof $nubSocket]} {
-	    HandleClientExit
-	    return
-	}
+        if {[eof $nubSocket]} {
+            HandleClientExit
+            return
+        }
 
-	switch -- [lindex $msg 0] {
-	    HELLO {
-		if {[llength $msg] == 3} {
-		    set project REMOTE
-		} else {
-		    set project [lindex $msg 3]
-		}
-		InitializeNub [lindex $msg 1] [lindex $msg 2] $project
-	    }
-	    ERROR {
-		error "Got an ERROR from an asyncronous SEND: $msg"
-	    }
-	    RESULT {		# Result of SEND message, should not happen
-		error "Got SEND result outside of call to dbg::Send; $msg"
-	    }
-	    BREAK {
-		Log timing {HandleNubEvent BREAK}
-		set appState "stopped"
-		set stack [lindex $msg 1]
-		set frame [lindex $stack end]
-		set currentPC [lindex $frame 1]
-		set currentLevel [lindex $frame 0]
+        switch -- [lindex $msg 0] {
+            HELLO {
+                if {[llength $msg] == 3} {
+                    set project REMOTE
+                } else {
+                    set project [lindex $msg 3]
+                }
+                InitializeNub [lindex $msg 1] [lindex $msg 2] $project
+            }
+            ERROR {
+                error "Got an ERROR from an asyncronous SEND: $msg"
+            }
+            RESULT {            # Result of SEND message, should not happen
+                error "Got SEND result outside of call to dbg::Send; $msg"
+            }
+            BREAK {
+                Log timing {HandleNubEvent BREAK}
+                set appState "stopped"
+                set stack [lindex $msg 1]
+                set frame [lindex $stack end]
+                set currentPC [lindex $frame 1]
+                set currentLevel [lindex $frame 0]
 
-		# Remove any current temporary breakpoint
+                # Remove any current temporary breakpoint
 
-		if {$tempBreakpoint != ""} {
-		    dbg::removeBreakpoint $tempBreakpoint
-		    set tempBreakpoint {}
-		}
+                if {$tempBreakpoint != ""} {
+                    dbg::removeBreakpoint $tempBreakpoint
+                    set tempBreakpoint {}
+                }
 
-		# If coverage is on, retrieve and store coverage data
+                # If coverage is on, retrieve and store coverage data
 
-		if {$::coverage::coverageEnabled} {
-		    coverage::tabulateCoverage [lindex $msg 2]
-		}
+                if {$::coverage::coverageEnabled} {
+                    coverage::tabulateCoverage [lindex $msg 2]
+                }
 
-		# Break up args and reform it as a valid list so we can safely
-		# pass it through eval.
+                # Break up args and reform it as a valid list so we can safely
+                # pass it through eval.
 
-		set newList {}
-		foreach arg [lindex $msg 4] {
-		    lappend newList $arg
-		}
+                set newList {}
+                foreach arg [lindex $msg 4] {
+                    lappend newList $arg
+                }
 
-		eval {DeliverEvent [lindex $msg 3]} $newList
-	    }
-	    INSTRUMENT {
-		SendAsync DbgNub_InstrumentReply [Instrument [lindex $msg 1] \
-			[lindex $msg 2]]
-	    }
-	    PROCBODY {
-		set body [dbg::getProcBody [lindex $msg 1]]
-		SendAsync array set DbgNub [list body $body state running]
-	    }
-	    UNSET {		# A variable was unset so clean up the trace
-		set handle [lindex $msg 1]
-		break::Release [break::GetVarBreakpoints $handle]
-	    }
-	    default {		# Looks like a bug to me
-		Log error {Unexpected message: $msg}
-	    }
-	}
+                eval {DeliverEvent [lindex $msg 3]} $newList
+            }
+            INSTRUMENT {
+                SendAsync DbgNub_InstrumentReply [Instrument [lindex $msg 1] \
+                        [lindex $msg 2]]
+            }
+            PROCBODY {
+                set body [dbg::getProcBody [lindex $msg 1]]
+                SendAsync array set DbgNub [list body $body state running]
+            }
+            UNSET {             # A variable was unset so clean up the trace
+                set handle [lindex $msg 1]
+                break::Release [break::GetVarBreakpoints $handle]
+            }
+            default {           # Looks like a bug to me
+                Log error {Unexpected message: $msg}
+            }
+        }
     } msg]
     if {$result == 1} {
-	Log error {Caught error in dbg::HandleNubEvent: $msg at \n$::errorInfo}
+        Log error {Caught error in dbg::HandleNubEvent: $msg at \n$::errorInfo}
     }
     return
 }
 
 # dbg::ignoreError --
 #
-#	Indicates that the debugger should suppress the current error
-#	being propagated by the nub.
+#       Indicates that the debugger should suppress the current error
+#       being propagated by the nub.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::ignoreError {} {
     variable appState
 
     if {$appState != "stopped"} {
-	error "dbg::step called with an app that is not stopped."
+        error "dbg::step called with an app that is not stopped."
     }
 
     SendAsync DbgNub_IgnoreError
@@ -1631,16 +1643,16 @@ proc dbg::ignoreError {} {
 
 # dbg::Instrument --
 #
-#	Instrument a new block of code.  Creates a block to contain the
-#	code and returns the newly instrumented script.
+#       Instrument a new block of code.  Creates a block to contain the
+#       code and returns the newly instrumented script.
 #
 # Arguments:
-#	file		File that contains script if this is being
-#			called because of "source", otherwise {}.
-#	script		Script to be instrumented.
+#       file            File that contains script if this is being
+#                       called because of "source", otherwise {}.
+#       script          Script to be instrumented.
 #
 # Results:
-#	Returns the instrumented code or "" if the instrumentation failed.
+#       Returns the instrumented code or "" if the instrumentation failed.
 
 proc dbg::Instrument {file script} {
     variable fileMapper
@@ -1664,21 +1676,21 @@ proc dbg::Instrument {file script} {
     set icode [blk::Instrument $block $script]
 
     # Ensure that all breakpoints are valid.
-	
+        
     dbg::validateBreakpoints $file $block
 
     if {$icode != "" && !$alreadyInstrumented} {
-	# If the instrumentation succeeded and the block was not previously
-	# instrumented (e.g. re-sourcing), create any enabled breakpoints.
+        # If the instrumentation succeeded and the block was not previously
+        # instrumented (e.g. re-sourcing), create any enabled breakpoints.
 
-	foreach breakpoint [break::GetLineBreakpoints \
-		[loc::makeLocation $block {}]] {
-	    if {[break::getState $breakpoint] == "enabled"} {
-		SendAsync DbgNub_AddBreakpoint "line" \
-			[break::getLocation $breakpoint] \
-			[break::getTest $breakpoint]
-	    }
-	}
+        foreach breakpoint [break::GetLineBreakpoints \
+                [loc::makeLocation $block {}]] {
+            if {[break::getState $breakpoint] == "enabled"} {
+                SendAsync DbgNub_AddBreakpoint "line" \
+                        [break::getLocation $breakpoint] \
+                        [break::getTest $breakpoint]
+            }
+        }
     }
 
     DeliverEvent instrument end $block
@@ -1687,15 +1699,15 @@ proc dbg::Instrument {file script} {
 
 # dbg::Log --
 #
-#	Log a debugging message.
+#       Log a debugging message.
 #
 # Arguments:
-#	type		Type of message to log
-#	message		Message string.  This string is substituted in
-#			the calling context.
+#       type            Type of message to log
+#       message         Message string.  This string is substituted in
+#                       the calling context.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::Log {type message} {
     variable logLevel
@@ -1711,16 +1723,16 @@ proc dbg::Log {type message} {
 
 # dbg::InitializeNub --
 #
-#	Initialize the client process by sending the nub library script
-#	to the client process.
+#       Initialize the client process by sending the nub library script
+#       to the client process.
 #
 # Arguments:
-#	nubVersion	The nub loader version.
-#	tclVersion	The tcl library version.
-#	clientData	The clientData passed to debugger_init.
+#       nubVersion      The nub loader version.
+#       tclVersion      The tcl library version.
+#       clientData      The clientData passed to debugger_init.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::InitializeNub {nubVersion tclVersion clientData} {
     variable appHost
@@ -1742,8 +1754,8 @@ proc dbg::InitializeNub {nubVersion tclVersion clientData} {
     # encoding to iso8859-1 to avoid sending multibyte characters.
 
     if {$tclVersion < 8.1} {
-	fconfigure $nubSocket -encoding iso8859-1
-    }	
+        fconfigure $nubSocket -encoding iso8859-1
+    }   
 
     SendMessage NUB $nubScript
 
@@ -1759,7 +1771,7 @@ proc dbg::InitializeNub {nubVersion tclVersion clientData} {
     # Begin coverage if it is enabled.
 
     if {$::coverage::coverageEnabled} {
-	SendAsync DbgNub_BeginCoverage
+        SendAsync DbgNub_BeginCoverage
     }
 
     # Configure the instrumentor to know what version of Tcl
@@ -1774,44 +1786,44 @@ proc dbg::InitializeNub {nubVersion tclVersion clientData} {
 
 # dbg::initInstrument --
 #
-#	This command will communicate with the client application to
-#	initialize various preference flags.  The flags being set are:
+#       This command will communicate with the client application to
+#       initialize various preference flags.  The flags being set are:
 #
-#	DbgNub(dynProc)		If true, then instrument dynamic procs.
-#	DbgNub(includeFiles)	A list of files to be instrumented.
-#	DbgNub(excludeFiles)	A list of files not to be instrumented.
-#				Exclusion takes precedence over inclusion.
-#	DbgNub(autoLoad)	If true, instrument scripts sourced
-#				during auto_loading or package requires.
-#	DbgNub(errorAction)	If 0, propagate errors.  If 1, stop on
-#				uncaught errors.  If 2, stop on all errors.
+#       DbgNub(dynProc)         If true, then instrument dynamic procs.
+#       DbgNub(includeFiles)    A list of files to be instrumented.
+#       DbgNub(excludeFiles)    A list of files not to be instrumented.
+#                               Exclusion takes precedence over inclusion.
+#       DbgNub(autoLoad)        If true, instrument scripts sourced
+#                               during auto_loading or package requires.
+#       DbgNub(errorAction)     If 0, propagate errors.  If 1, stop on
+#                               uncaught errors.  If 2, stop on all errors.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	None.
+#       None.
 
 proc dbg::initInstrument {} {
     if {$dbg::appState != "dead"} {
-	SendAsync set DbgNub(dynProc)      [pref::prefGet instrumentDynamic]
-	SendAsync set DbgNub(includeFiles) [pref::prefGet doInstrument]
-	SendAsync set DbgNub(excludeFiles) [pref::prefGet dontInstrument]
-	SendAsync set DbgNub(autoLoad)   [pref::prefGet autoLoad]
-	SendAsync set DbgNub(errorAction)  [pref::prefGet errorAction]
+        SendAsync set DbgNub(dynProc)      [pref::prefGet instrumentDynamic]
+        SendAsync set DbgNub(includeFiles) [pref::prefGet doInstrument]
+        SendAsync set DbgNub(excludeFiles) [pref::prefGet dontInstrument]
+        SendAsync set DbgNub(autoLoad)   [pref::prefGet autoLoad]
+        SendAsync set DbgNub(errorAction)  [pref::prefGet errorAction]
     }
     return
 }
 
 # dbg::getAppVersion --
 #
-#	Return the tcl_version of the running app.
+#       Return the tcl_version of the running app.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	Return the tcl_version of the running app.
+#       Return the tcl_version of the running app.
 
 proc dbg::getAppVersion {} {
     return $dbg::appVersion
@@ -1819,20 +1831,20 @@ proc dbg::getAppVersion {} {
 
 # dbg::isLocalhost --
 #
-#	Determine if the nub is running on the same host as the debugger.
+#       Determine if the nub is running on the same host as the debugger.
 #
 # Arguments:
-#	None.
+#       None.
 #
 # Results:
-#	Boolean, true if the nub and debugger are on the same machine.
+#       Boolean, true if the nub and debugger are on the same machine.
 
 proc dbg::isLocalhost {} {
     variable appState
     variable appHost
 
     if {$appState == "dead"} {
-	return 1
+        return 1
     }
     return [expr {[string compare $appHost [info hostname]] == 0}]
 }

@@ -8,6 +8,7 @@ package require parser
 #   cwd    (string) path of working directory of script
 #   target (string) path to the script to run
 #   args   (list)   arguments to 'target'
+#   env    (object) environment variables to set when launching
 #
 # Attach:
 #   host (string) IPv4 hostname (e.g. localhost)
@@ -281,6 +282,14 @@ proc ::server::OnRequest_configurationDone { msg } {
     ::connection::accept $msg
 }
 
+proc ::DictDefault { d k def } {
+    if { [dict exists $d $k] } {
+        return [dict get $d $k]
+    }
+
+    return $def
+}
+
 proc ::server::_DoLaunch { msg } {
     dbg::Log info {launch!}
 
@@ -293,7 +302,8 @@ proc ::server::_DoLaunch { msg } {
                [dict get $launchConfig cwd] \
                [dict get $launchConfig target] \
                [dict get $launchConfig args] \
-               $msg
+               $msg \
+               [::DictDefault $launchConfig env {}]
 }
 
 proc ::server::_DoAttach { msg } {
