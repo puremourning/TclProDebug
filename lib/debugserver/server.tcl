@@ -1028,16 +1028,26 @@ proc ::server::setState { newState } {
 
 proc ::server::mapFileName { direction fileName } {
     variable launchConfig
+    set candidates [list]
     if { [dict exists $launchConfig $direction] } {
         foreach mapping [dict get $launchConfig $direction] {
             dict for {pattern replacement} $mapping  {
                 if { [regsub $pattern $fileName $replacement mapped] > 0 } {
-                    return $mapped
+                    # If the mapped file exists, use it, otherwise remember the
+                    # sequence of matches, so that we can return the first one
+                    # that matched, even if it doesn't exist
+                    if { [file exists $mapped] } {
+                        return $mapped
+                    }
+                    lappend candidates $mapped
                 }
             }
         }
     }
-    return $fileName
+
+    return [expr {
+        [llength $candidates] ? [lindex $candidates 0 ] : $fileName
+    } ]
 }
 
 proc ::server::bgerror { msg } {
