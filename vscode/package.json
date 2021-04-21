@@ -62,6 +62,11 @@
                 "description": "Program working directory.",
                 "default": "${workspaceRoot}"
               },
+              "env": {
+                "type": "object",
+                "description": "Environment variables to set when launching the process",
+                "default": {}
+              },
               "pauseOnEntry": {
                 "type": "boolean",
                 "description": "Automatically stop after launch.",
@@ -126,7 +131,8 @@
             "tclsh": "tclsh",
             "target": "${file}",
             "args": [],
-            "cwd": "${workspaceRoot}"
+            "cwd": "${workspaceRoot}",
+            "env": {}
           }
         ],
         "configurationSnippets": []
