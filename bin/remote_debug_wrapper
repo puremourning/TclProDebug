@@ -13,6 +13,26 @@ if { [info exists ::env(TCLPRO_DEBUG_PORT)] } {
     set port $::env(TCLPRO_DEBUG_PORT)
 }
 
+#
+# Parse additional arguments for this process:
+#  -port <port>
+#  -cwd <cwd>
+#
+while { [llength $argv] } {
+    set arg [lindex $argv 0]
+    if { $arg == "--" } {
+        set argv [lassign $argv ignored_]
+        break
+    } elseif { $arg == "-port" } {
+        set argv [lassign $argv ignored_ port]
+    } elseif { $arg == "-cwd" } {
+        set argv [lassign $argv ignored_ cwd]
+        cd $cwd
+    } else {
+        break
+    }
+}
+
 
 set script [lindex $argv 0]
 set argv [lrange $argv 1 end]
